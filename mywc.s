@@ -29,6 +29,13 @@ fmt_string:
     .asciz "%7ld %7ld %7ld\n"
 
     .text
+    .global _start
+_start:
+    bl main                      // Call the main function
+    mov x8, #93                  // Exit syscall number for Linux (exit)
+    mov x0, #0                   // Exit code 0
+    svc #0                       // Make syscall
+
     .global main
 main:
     // Function prologue
