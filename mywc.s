@@ -146,3 +146,4 @@ AfterFinalWordCount:
     mov w0, #0                      // Set return value to 0
     ldp x29, x30, [sp], #16         // Restore frame pointer and return address
     ret                             // Return from main
+    
