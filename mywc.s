@@ -25,6 +25,8 @@ iChar:           .word 0
 iInWord:         .word 0
 
     // Format string for printf
+fmt_string:
+    .asciz "%7ld %7ld %7ld\n"
 
     .global main
 main:
@@ -136,3 +138,4 @@ AfterFinalWordCount:
     mov w0, #0                      // Set return value to 0
     ldp x29, x30, [sp], #16         // Restore frame pointer and return address
     ret                             // Return from main
+    
