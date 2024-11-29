@@ -1,141 +1,129 @@
-/*--------------------------------------------------------------------*/
-/* mywc.s                                                             */
-/* Author: Emily Qian and Claire Shin                                 */
-/*--------------------------------------------------------------------*/
+//---------------------------------------------------------------------
+// mywc.s
+// Author: Emily Qian and Claire Shin
+//---------------------------------------------------------------------
 
-    .data
-    // long lLineCount = 0;
-    .global lLineCount
+        .section .rodata
+
+fmt_string: 
+        .asciz "%7ld %7ld %7ld\n" // Format string for printf
+
+//---------------------------------------------------------------------
+
+        .section .data
+
+        // long lLineCount = 0;
+        .global lLineCount
 lLineCount:      .quad 0
 
-    // long lWordCount = 0;
-    .global lWordCount
+        // long lWordCount = 0;
+        .global lWordCount
 lWordCount:      .quad 0
 
-    // long lCharCount = 0;
-    .global lCharCount
+        // long lCharCount = 0;
+        .global lCharCount
 lCharCount:      .quad 0
 
-    // int iChar;
-    .global iChar
+        // int iChar;
+        .global iChar
 iChar:           .word 0
 
-    // int iInWord = FALSE;
-    .global iInWord
+        // int iInWord = FALSE;
+        .global iInWord
 iInWord:         .word 0
 
-    // Format string for printf
-fmt_string:
-    .asciz "%7ld %7ld %7ld\n"
+//---------------------------------------------------------------------
 
-    .global main
+        .section .text
+
+        .global main
+
 main:
-    // Function prologue
-    stp x29, x30, [sp, -16]!        // Save frame pointer and return address
-    mov x29, sp                     // Set frame pointer
+        // Prolog
+        sub     sp, sp, #16       // Allocate stack frame
+        str     x30, [sp, #8]     // Save return address
+        mov     x29, sp           // Set frame pointer
 
-    // Compute addresses of global variables
-    adrp x20, iChar                 // Compute base address of iChar
-    add x20, x20, :lo12:iChar       // Get full address of iChar
-
-    adrp x21, iInWord               // Compute base address of iInWord
-    add x21, x21, :lo12:iInWord     // Get full address of iInWord
-
-    adrp x22, lLineCount            // Compute base address of lLineCount
-    add x22, x22, :lo12:lLineCount  // Get full address of lLineCount
-
-    adrp x23, lWordCount            // Compute base address of lWordCount
-    add x23, x23, :lo12:lWordCount  // Get full address of lWordCount
-
-    adrp x24, lCharCount            // Compute base address of lCharCount
-    add x24, x24, :lo12:lCharCount  // Get full address of lCharCount
-
-    adrp x25, fmt_string            // Compute base address of fmt_string
-    add x25, x25, :lo12:fmt_string  // Get full address of fmt_string
-
-    /* while ((iChar = getchar()) != EOF) */
+        // while ((iChar = getchar()) != EOF)
 Loop_Start:
-    bl getchar                      // Call getchar()
-    str w0, [x20]                   // Store iChar in memory
+        bl      getchar           // Call getchar()
+        str     w0, iChar         // iChar = getchar()
+        ldr     w1, iChar         // Load iChar
+        cmp     w1, #-1           // Compare iChar with EOF
+        beq     Loop_End          // Exit loop if iChar == EOF
 
-    ldr w1, [x20]                   // Load iChar into w1
-    cmp w1, #-1                     // Compare iChar with EOF (-1)
-    beq Loop_End                    // If iChar == EOF, exit loop
+        // lCharCount++;
+        ldr     x2, lCharCount    // Load lCharCount
+        add     x2, x2, #1        // Increment lCharCount
+        str     x2, lCharCount    // Store updated lCharCount
 
-    /* lCharCount = lCharCount + 1; */
-    ldr x2, [x24]                   // Load lCharCount
-    add x2, x2, #1                  // Increment lCharCount
-    str x2, [x24]                   // Store updated lCharCount
+        // if (isspace(iChar))
+        mov     w0, w1            // Move iChar into w0 for isspace
+        bl      isspace           // Call isspace(iChar)
+        cmp     w0, #0            // Compare result with 0
+        beq     NotSpace          // If not whitespace, skip
 
-    /* if (isspace(iChar)) */
-    mov w0, w1                      // Move iChar into w0 for isspace
-    bl isspace                      // Call isspace(iChar)
-    cmp w0, #0                      // Compare result with 0
-    beq NotSpace                    // If zero, character is not whitespace
+        // if (iInWord)
+        ldr     w3, iInWord       // Load iInWord
+        cmp     w3, #0            // Compare iInWord with FALSE
+        beq     SkipWordCountIncrement // Skip if iInWord == FALSE
 
-        /* if (iInWord) */
-        ldr w3, [x21]               // Load iInWord
-        cmp w3, #0                  // Compare iInWord with 0
-        beq SkipWordCountIncrement  // If iInWord == FALSE, skip
+        // lWordCount++;
+        ldr     x5, lWordCount    // Load lWordCount
+        add     x5, x5, #1        // Increment lWordCount
+        str     x5, lWordCount    // Store updated lWordCount
 
-            /* lWordCount = lWordCount + 1; */
-            ldr x5, [x23]           // Load lWordCount
-            add x5, x5, #1          // Increment lWordCount
-            str x5, [x23]           // Store updated lWordCount
-
-            /* iInWord = FALSE; */
-            mov w3, #0              // Set iInWord to FALSE
-            str w3, [x21]           // Store updated iInWord
+        // iInWord = FALSE;
+        mov     w3, #0            // Set iInWord to FALSE
+        str     w3, iInWord       // Store updated iInWord
 
 SkipWordCountIncrement:
-    b CheckNewline                  // Proceed to check newline
+        b       CheckNewline      // Proceed to newline check
 
 NotSpace:
-    /* else if (!iInWord) */
-    ldr w3, [x21]                   // Load iInWord
-    cmp w3, #0                      // Compare iInWord with 0
-    bne CheckNewline                // If iInWord != FALSE, skip
+        // else if (!iInWord)
+        ldr     w3, iInWord       // Load iInWord
+        cmp     w3, #0            // Compare iInWord with FALSE
+        bne     CheckNewline      // If iInWord != FALSE, skip
 
-        /* iInWord = TRUE; */
-        mov w3, #1                  // Set iInWord to TRUE
-        str w3, [x21]               // Store updated iInWord
+        // iInWord = TRUE;
+        mov     w3, #1            // Set iInWord to TRUE
+        str     w3, iInWord       // Store updated iInWord
 
 CheckNewline:
-    /* if (iChar == '\n') */
-    cmp w1, #10                     // Compare iChar with newline character
-    bne Loop_Next                   // If not newline, skip
+        // if (iChar == '\n')
+        cmp     w1, #10           // Compare iChar with newline character
+        bne     Loop_Next         // Skip if not newline
 
-        /* lLineCount = lLineCount + 1; */
-        ldr x7, [x22]               // Load lLineCount
-        add x7, x7, #1              // Increment lLineCount
-        str x7, [x22]               // Store updated lLineCount
+        // lLineCount++;
+        ldr     x7, lLineCount    // Load lLineCount
+        add     x7, x7, #1        // Increment lLineCount
+        str     x7, lLineCount    // Store updated lLineCount
 
 Loop_Next:
-    b Loop_Start                    // Repeat loop
+        b       Loop_Start        // Repeat loop
 
 Loop_End:
-    /* if (iInWord) */
-    ldr w3, [x21]                   // Load iInWord
-    cmp w3, #0                      // Compare iInWord with 0
-    beq AfterFinalWordCount         // If iInWord == FALSE, skip
+        // if (iInWord)
+        ldr     w3, iInWord       // Load iInWord
+        cmp     w3, #0            // Compare iInWord with FALSE
+        beq     AfterFinalWordCount // Skip if iInWord == FALSE
 
-        /* lWordCount = lWordCount + 1; */
-        ldr x5, [x23]               // Load lWordCount
-        add x5, x5, #1              // Increment lWordCount
-        str x5, [x23]               // Store updated lWordCount
+        // lWordCount++;
+        ldr     x5, lWordCount    // Load lWordCount
+        add     x5, x5, #1        // Increment lWordCount
+        str     x5, lWordCount    // Store updated lWordCount
 
 AfterFinalWordCount:
-    /* printf("%7ld %7ld %7ld\n", lLineCount, lWordCount, lCharCount); */
-    mov x0, x25                     // Move address of fmt_string to x0
+        // printf("%7ld %7ld %7ld\n", lLineCount, lWordCount, lCharCount);
+        ldr     x0, =fmt_string   // Address of format string
+        ldr     x1, lLineCount    // Load lLineCount
+        ldr     x2, lWordCount    // Load lWordCount
+        ldr     x3, lCharCount    // Load lCharCount
+        bl      printf            // Call printf()
 
-    ldr x1, [x22]                   // Load lLineCount
-    ldr x2, [x23]                   // Load lWordCount
-    ldr x3, [x24]                   // Load lCharCount
-
-    bl printf                       // Call printf()
-
-    /* return 0; */
-    mov w0, #0                      // Set return value to 0
-    ldp x29, x30, [sp], #16         // Restore frame pointer and return address
-    ret                             // Return from main
-    
+        // return 0;
+        mov     w0, #0            // Set return value to 0
+        ldr     x30, [sp, #8]     // Restore return address
+        add     sp, sp, #16       // Deallocate stack frame
+        ret                       // Return
