@@ -149,3 +149,4 @@ AfterFinalWordCount:
         ldr     x30, [sp]                 // Restore return address from stack
         add     sp, sp, #STACK_FRAME_SIZE // Deallocate stack frame
         ret
+        
