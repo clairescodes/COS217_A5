@@ -126,4 +126,4 @@ AfterFinalWordCount:
         mov     w0, #0            // Set return value to 0
         ldr     x30, [sp, #8]     // Restore return address
         add     sp, sp, #16       // Deallocate stack frame
-        ret                       // Return
+        ret
