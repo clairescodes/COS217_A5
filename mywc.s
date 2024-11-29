@@ -1,12 +1,12 @@
 //---------------------------------------------------------------------
 // mywc.s
-// Author: Emily Qian and Claire Shin
+// Author: Bob Dondero
 //---------------------------------------------------------------------
 
         .section .rodata
 
 fmt_string: 
-        .asciz "%7ld %7ld %7ld\n" // Format string for printf
+        .string "%7ld %7ld %7ld\n" // Format string for printf
 
 //---------------------------------------------------------------------
 
