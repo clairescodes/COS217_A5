@@ -70,6 +70,7 @@ Loop_Start:
 
         // if (isspace(iChar))
         mov     w0, w1                    // Move iChar into w0 for isspace
+        and     w0, w0, #0xFF             // Mask to ensure iChar is in 0-255
         bl      isspace                   // Call isspace(iChar)
         cmp     w0, #0                    // Compare result with FALSE
         beq     NotSpace                  // If not whitespace, skip
@@ -149,4 +150,3 @@ AfterFinalWordCount:
         ldr     x30, [sp]                 // Restore return address from stack
         add     sp, sp, #STACK_FRAME_SIZE // Deallocate stack frame
         ret
-        
