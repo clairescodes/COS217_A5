@@ -1,202 +1,167 @@
-/* bigintadd.s */
+//---------------------------------------------------------------------
+// mywc.s
+// Author: Emily Qian and Claire Shin
+//---------------------------------------------------------------------
 
-/*--------------------------------------------------------------------*/
-/* Constants and Offsets                                              */
-/*--------------------------------------------------------------------*/
+        .section .rodata
 
-    .equ    MAX_DIGITS, 32768
-    .equ    TRUE, 1
-    .equ    FALSE, 0
+fmt_string:
+        .string "%7ld %7ld %7ld\n" // Format string for printf
 
-    /* Stack frame size */
-    .equ    BIGINTADD_STACK_SIZE, 64    // Adjust as needed for your variables
+//---------------------------------------------------------------------
 
-    /* Offsets from x29 (frame pointer) */
-    .equ    ULCARRY, 16
-    .equ    LINDEX, 24
-    .equ    LSUMLENGTH, 32
-    .equ    OADDEND1, 40
-    .equ    OADDEND2, 48
-    .equ    OSUM, 56
+        .section .data
 
-    /* Offsets within the BigInt_T structure */
-    .equ    LLENGTH, 0
-    .equ    AULDIGITS, 8
+        // long lLineCount = 0;
+        .global lLineCount
+lLineCount:      .quad 0
 
-    .global BigInt_larger
-    .global BigInt_add
+        // long lWordCount = 0;
+        .global lWordCount
+lWordCount:      .quad 0
 
-/*--------------------------------------------------------------------*/
-/* BigInt_larger: Returns the larger of lLength1 and lLength2         */
-/*--------------------------------------------------------------------*/
-BigInt_larger:
-    // Prologue
-    stp     x29, x30, [sp, #-16]!         // Save x29 and x30, update sp
-    mov     x29, sp                       // Set frame pointer
-    sub     sp, sp, 16                    // Allocate stack space for variables
+        // long lCharCount = 0;
+        .global lCharCount
+lCharCount:      .quad 0
 
-    // Store parameters (lLength1 and lLength2) on the stack
-    str     x0, [x29, 0]                  // lLength1 at [x29, 0]
-    str     x1, [x29, 8]                  // lLength2 at [x29, 8]
+        // int iChar;
+        .global iChar
+iChar:           .word 0
 
-    // Load lLength1 and lLength2
-    ldr     x0, [x29, 0]                  // Load lLength1
-    ldr     x1, [x29, 8]                  // Load lLength2
+        // int iInWord = FALSE;
+        .global iInWord
+iInWord:         .word 0
 
-    // Compare lLength1 and lLength2
-    cmp     x0, x1
-    bgt     larger_lLength1               // If lLength1 > lLength2
+//---------------------------------------------------------------------
 
-    // lLength2 is larger or equal
-    mov     x0, x1                        // Return lLength2
-    b       return_larger
+        .section .text
 
-larger_lLength1:
-    // lLength1 is larger
-    // x0 already has lLength1
+        // Define constants
+        .equ EOF, -1              // End of file
+        .equ TRUE, 1              // Boolean true
+        .equ FALSE, 0             // Boolean false
+        .equ NEWLINE, 10          // ASCII code for '\n'
+        .equ STACK_FRAME_SIZE, 64 // Stack frame size (aligned to 16 bytes)
 
-return_larger:
-    // Epilogue
-    add     sp, sp, 16                    // Deallocate local variables
-    ldp     x29, x30, [sp], #16           // Restore x29 and x30, update sp
-    ret                                   // Return from function
+        .global main
 
-    .size BigInt_larger, . - BigInt_larger
+main:
+        // Prologue: Adjust stack and save registers
+        sub     sp, sp, #STACK_FRAME_SIZE
+        stp     x29, x30, [sp, #STACK_FRAME_SIZE - 16]  // Save x29 (fp) and x30 (lr)
+        stp     x19, x20, [sp, #STACK_FRAME_SIZE - 32]  // Save x19 and x20
+        stp     x21, x22, [sp, #STACK_FRAME_SIZE - 48]  // Save x21 and x22
+        str     x23, [sp, #STACK_FRAME_SIZE - 56]       // Save x23
+        mov     x29, sp
 
-/*--------------------------------------------------------------------*/
-/* BigInt_add: Adds two BigInt numbers                                */
-/* Returns TRUE (1) if addition is successful, FALSE (0) if overflow  */
-/*--------------------------------------------------------------------*/
-BigInt_add:
-    // Prologue
-    stp     x29, x30, [sp, #-16]!          // Save x29 and x30, update sp
-    mov     x29, sp                        // Set frame pointer
-    sub     sp, sp, BIGINTADD_STACK_SIZE   // Allocate space for variables
+        // Load addresses of global variables into non-volatile registers
+        adr     x19, iChar          // x19 = &iChar
+        adr     x20, iInWord        // x20 = &iInWord
+        adr     x21, lCharCount     // x21 = &lCharCount
+        adr     x22, lLineCount     // x22 = &lLineCount
+        adr     x23, lWordCount     // x23 = &lWordCount
 
-    // Store parameters on the stack
-    str     x0, [x29, OADDEND1]            // oAddend1
-    str     x1, [x29, OADDEND2]            // oAddend2
-    str     x2, [x29, OSUM]                // oSum
+        // Initialize lLineCount, lWordCount, lCharCount to 0
+        mov     x2, #0
+        str     x2, [x22]           // lLineCount = 0
+        str     x2, [x23]           // lWordCount = 0
+        str     x2, [x21]           // lCharCount = 0
 
-    // Determine lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength)
-    ldr     x0, [x29, OADDEND1]            // Load oAddend1
-    ldr     x0, [x0, LLENGTH]              // x0 = oAddend1->lLength
-    ldr     x1, [x29, OADDEND2]            // Load oAddend2
-    ldr     x1, [x1, LLENGTH]              // x1 = oAddend2->lLength
-    bl      BigInt_larger                  // Call BigInt_larger(x0, x1)
-    str     x0, [x29, LSUMLENGTH]          // Store lSumLength
+        // Initialize iInWord to FALSE
+        mov     w2, #FALSE
+        str     w2, [x20]           // iInWord = FALSE
 
-    // Initialize ulCarry = 0 and lIndex = 0
-    mov     x0, 0
-    str     x0, [x29, ULCARRY]
-    str     x0, [x29, LINDEX]
+Loop_Start:
+        // Read a character: iChar = getchar()
+        bl      getchar
+        str     w0, [x19]          // Store getchar() result in iChar
 
-addition_loop:
-    // lIndex < lSumLength?
-    ldr     x0, [x29, LINDEX]
-    ldr     x1, [x29, LSUMLENGTH]
-    cmp     x0, x1
-    bge     end_addition_loop
+        // Check for EOF
+        ldr     w1, [x19]          // Load iChar into w1
+        cmp     w1, #EOF
+        beq     Loop_End           // Exit loop if EOF
 
-    // Load ulCarry
-    ldr     x6, [x29, ULCARRY]             // x6 = ulCarry
-    mov     x7, 0
-    str     x7, [x29, ULCARRY]             // Reset ulCarry to 0
+        // Increment lCharCount
+        ldr     x2, [x21]          // Load lCharCount into x2
+        add     x2, x2, #1
+        str     x2, [x21]
 
-    // Load oAddend1->aulDigits[lIndex]
-    ldr     x2, [x29, OADDEND1]
-    add     x2, x2, AULDIGITS              // x2 = &oAddend1->aulDigits
-    ldr     x3, [x29, LINDEX]
-    lsl     x3, x3, #3                     // x3 = lIndex * 8
-    add     x2, x2, x3                     // x2 = &oAddend1->aulDigits[lIndex]
-    ldr     x3, [x2]                       // x3 = oAddend1->aulDigits[lIndex]
+        // Prepare argument for isspace
+        ldr     w1, [x19]          // Load iChar into w1
+        and     w1, w1, #0xFF      // Mask to lower 8 bits
+        mov     x0, w1             // Zero-extend w1 to x0
+        bl      isspace
+        cmp     w0, #0             // Check if result is zero
+        beq     NotSpace
 
-    // Add to ulSum
-    add     x6, x6, x3                     // x6 = ulSum + oAddend1->aulDigits[lIndex]
+        // Handle end of word (if iInWord == TRUE)
+        ldr     w2, [x20]          // Load iInWord
+        cmp     w2, #TRUE
+        beq     EndWord
 
-    // Check for overflow after adding oAddend1
-    cmp     x6, x3
-    bcs     no_overflow_addend1            // If x6 >= x3, no overflow
-    mov     x7, 1                          // Set ulCarry to 1
-    str     x7, [x29, ULCARRY]
-no_overflow_addend1:
+        b       CheckNewline
 
-    // Load oAddend2->aulDigits[lIndex]
-    ldr     x2, [x29, OADDEND2]
-    add     x2, x2, AULDIGITS              // x2 = &oAddend2->aulDigits
-    ldr     x4, [x29, LINDEX]
-    lsl     x4, x4, #3                     // x4 = lIndex * 8
-    add     x2, x2, x4                     // x2 = &oAddend2->aulDigits[lIndex]
-    ldr     x4, [x2]                       // x4 = oAddend2->aulDigits[lIndex]
+EndWord:
+        // Increment word count
+        ldr     x2, [x23]          // Load lWordCount
+        add     x2, x2, #1
+        str     x2, [x23]          // Store back
 
-    // Add to ulSum
-    add     x6, x6, x4                     // x6 = ulSum + oAddend2->aulDigits[lIndex]
+        // Set iInWord to FALSE
+        mov     w2, #FALSE
+        str     w2, [x20]
+        b       CheckNewline
 
-    // Check for overflow after adding oAddend2
-    cmp     x6, x4
-    bcs     no_overflow_addend2            // If x6 >= x4, no overflow
-    ldr     x7, [x29, ULCARRY]
-    mov     x8, 1
-    orr     x7, x7, x8                     // ulCarry |= 1
-    str     x7, [x29, ULCARRY]
-no_overflow_addend2:
+NotSpace:
+        // Check if not already in a word
+        ldr     w2, [x20]          // Load iInWord
+        cmp     w2, #FALSE
+        bne     CheckNewline
 
-    // Store ulSum in oSum->aulDigits[lIndex]
-    ldr     x9, [x29, OSUM]
-    add     x9, x9, AULDIGITS              // x9 = &oSum->aulDigits
-    ldr     x10, [x29, LINDEX]
-    lsl     x10, x10, #3                   // x10 = lIndex * 8
-    add     x9, x9, x10                    // x9 = &oSum->aulDigits[lIndex]
-    str     x6, [x9]                       // oSum->aulDigits[lIndex] = ulSum
+        // Set iInWord to TRUE
+        mov     w2, #TRUE
+        str     w2, [x20]
 
-    // Increment lIndex
-    ldr     x0, [x29, LINDEX]
-    add     x0, x0, 1
-    str     x0, [x29, LINDEX]
-    b       addition_loop
+CheckNewline:
+        // Check for newline character
+        ldr     w2, [x19]          // Load iChar
+        cmp     w2, #NEWLINE
+        bne     Loop_Start
 
-end_addition_loop:
-    // Check if ulCarry == 1
-    ldr     x7, [x29, ULCARRY]
-    cmp     x7, 1
-    bne     set_sum_length                // If ulCarry != 1, skip adding extra digit
+        // Increment line count
+        ldr     x2, [x22]          // Load lLineCount
+        add     x2, x2, #1
+        str     x2, [x22]
 
-    // Handle carry overflow
-    ldr     x0, [x29, LSUMLENGTH]
-    mov     x1, MAX_DIGITS
-    cmp     x0, x1
-    beq     returnFalse                   // If lSumLength == MAX_DIGITS, return FALSE
+        b       Loop_Start
 
-    // oSum->aulDigits[lSumLength] = 1
-    ldr     x9, [x29, OSUM]
-    add     x9, x9, AULDIGITS             // x9 = &oSum->aulDigits
-    lsl     x10, x0, #3                   // x10 = lSumLength * 8
-    add     x9, x9, x10                   // x9 = &oSum->aulDigits[lSumLength]
-    mov     x6, 1
-    str     x6, [x9]                      // oSum->aulDigits[lSumLength] = 1
+Loop_End:
+        // Check if still in a word at EOF
+        ldr     w2, [x20]          // Load iInWord
+        cmp     w2, #TRUE
+        beq     FinalWord
 
-    // Increment lSumLength
-    add     x0, x0, 1
-    str     x0, [x29, LSUMLENGTH]
+        b       PrintResults
 
-set_sum_length:
-    // Set oSum->lLength = lSumLength
-    ldr     x0, [x29, OSUM]
-    ldr     x1, [x29, LSUMLENGTH]
-    str     x1, [x0, LLENGTH]             // oSum->lLength = lSumLength
+FinalWord:
+        // Increment word count for the last word
+        ldr     x2, [x23]          // Load lWordCount
+        add     x2, x2, #1
+        str     x2, [x23]
 
-    // Return TRUE
-    mov     x0, TRUE
-    b       end_BigInt_add
+PrintResults:
+        // Prepare arguments for printf
+        adr     x0, fmt_string     // Format string
+        ldr     x1, [x22]          // lLineCount
+        ldr     x2, [x23]          // lWordCount
+        ldr     x3, [x21]          // lCharCount
+        bl      printf
 
-returnFalse:
-    // Return FALSE
-    mov     x0, FALSE
-
-end_BigInt_add:
-    // Epilogue
-    add     sp, sp, BIGINTADD_STACK_SIZE   // Deallocate local variables
-    ldp     x29, x30, [sp], #16            // Restore x29 and x30, update sp
-    ret                                    // Return from function
-
-    .size BigInt_add, . - BigInt_add
+        // Return from main
+        mov     w0, #0
+        ldp     x29, x30, [sp, #STACK_FRAME_SIZE - 16]  // Restore x29 and x30
+        ldp     x19, x20, [sp, #STACK_FRAME_SIZE - 32]  // Restore x19 and x20
+        ldp     x21, x22, [sp, #STACK_FRAME_SIZE - 48]  // Restore x21 and x22
+        ldr     x23, [sp, #STACK_FRAME_SIZE - 56]       // Restore x23
+        add     sp, sp, #STACK_FRAME_SIZE
+        ret
