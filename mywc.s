@@ -87,8 +87,7 @@ Loop_Start:
         // Mask iChar for isspace
         adr     x1, iChar
         ldr     w1, [x1]
-        mov     w0, w1
-        and     w0, w0, #0xFF         // Mask to ensure valid range (0-255)
+        and     x0, w1, #0xFF         // Mask w1 and zero-extend to x0
         bl      isspace
         cmp     w0, #0                // Check if iChar is a space
         beq     NotSpace
