@@ -46,107 +46,123 @@ iInWord:         .word 0
         .global main
 
 main:
-        // Prolog
-        sub     sp, sp, #STACK_FRAME_SIZE // Allocate stack frame
-        str     x30, [sp]                 // Save return address on the stack
-        mov     x29, sp                   // Set frame pointer
+        // Prolog: Ensure proper stack alignment
+        sub     sp, sp, #STACK_FRAME_SIZE
+        stp     x29, x30, [sp]
+        mov     x29, sp
 
-        // while ((iChar = getchar()) != EOF)
+        // Initialize variables
+        adr     x1, lLineCount
+        mov     x2, #0
+        str     x2, [x1]          // lLineCount = 0
+
+        adr     x1, lWordCount
+        str     x2, [x1]          // lWordCount = 0
+
+        adr     x1, lCharCount
+        str     x2, [x1]          // lCharCount = 0
+
+        adr     x1, iInWord
+        mov     w2, #FALSE
+        str     w2, [x1]          // iInWord = FALSE
+
 Loop_Start:
-        bl      getchar                   // Call getchar()
-        adr     x1, iChar                 // Compute address of iChar
-        str     w0, [x1]                  // Store iChar = getchar()
+        // Read a character: iChar = getchar()
+        bl      getchar
+        adr     x1, iChar
+        str     w0, [x1]          // Store getchar() result in iChar
 
-        adr     x1, iChar                 // Compute address of iChar
-        ldr     w1, [x1]                  // Load iChar
-        cmp     w1, #EOF                  // Compare iChar with EOF
-        beq     Loop_End                  // Exit loop if iChar == EOF
+        // Check for EOF
+        adr     x1, iChar
+        ldr     w1, [x1]
+        cmp     w1, #EOF
+        beq     Loop_End          // Exit loop if EOF
 
-        // lCharCount++;
-        adr     x1, lCharCount            // Compute address of lCharCount
-        ldr     x2, [x1]                  // Load lCharCount
-        add     x2, x2, #1                // Increment lCharCount
-        str     x2, [x1]                  // Store updated lCharCount
+        // Increment lCharCount
+        adr     x1, lCharCount
+        ldr     x2, [x1]
+        add     x2, x2, #1
+        str     x2, [x1]
 
-        // if (isspace(iChar))
-        mov     w0, w1                    // Move iChar into w0 for isspace
-        and     w0, w0, #0xFF             // Mask to ensure iChar is in 0-255
-        bl      isspace                   // Call isspace(iChar)
-        cmp     w0, #0                    // Compare result with FALSE
-        beq     NotSpace                  // If not whitespace, skip
+        // Mask iChar for isspace
+        adr     x1, iChar
+        ldr     w1, [x1]
+        mov     w0, w1
+        and     w0, w0, #0xFF         // Mask to ensure valid range (0-255)
+        bl      isspace
+        cmp     w0, #0                // Check if iChar is a space
+        beq     NotSpace
 
-        // if (iInWord)
-        adr     x1, iInWord               // Compute address of iInWord
-        ldr     w2, [x1]                  // Load iInWord
-        cmp     w2, #0                    // Compare iInWord with FALSE
-        beq     SkipWordCountIncrement    // Skip if iInWord == FALSE
+        // Handle end of word (if iInWord == TRUE)
+        adr     x1, iInWord
+        ldr     w2, [x1]
+        cmp     w2, #TRUE
+        beq     EndWord
 
-        // lWordCount++;
-        adr     x1, lWordCount            // Compute address of lWordCount
-        ldr     x2, [x1]                  // Load lWordCount
-        add     x2, x2, #1                // Increment lWordCount
-        str     x2, [x1]                  // Store updated lWordCount
+        b       CheckNewline
 
-        // iInWord = FALSE;
-        mov     w2, #0                    // Set iInWord to FALSE
-        str     w2, [x1]                  // Store updated iInWord
+EndWord:
+        adr     x1, lWordCount
+        ldr     x2, [x1]
+        add     x2, x2, #1            // Increment word count
+        str     x2, [x1]
 
-SkipWordCountIncrement:
-        b       CheckNewline              // Proceed to newline check
+        adr     x1, iInWord
+        mov     w2, #FALSE
+        str     w2, [x1]              // Set iInWord = FALSE
+
+        b       CheckNewline
 
 NotSpace:
-        // else if (!iInWord)
-        adr     x1, iInWord               // Compute address of iInWord
-        ldr     w2, [x1]                  // Load iInWord
-        cmp     w2, #0                    // Compare iInWord with FALSE
-        bne     CheckNewline              // If iInWord != FALSE, skip
+        // Handle start of a new word (if iInWord == FALSE)
+        adr     x1, iInWord
+        ldr     w2, [x1]
+        cmp     w2, #FALSE
+        bne     CheckNewline          // Skip if already in a word
 
-        // iInWord = TRUE;
-        mov     w2, #1                    // Set iInWord to TRUE
-        str     w2, [x1]                  // Store updated iInWord
+        adr     x1, iInWord
+        mov     w2, #TRUE
+        str     w2, [x1]              // Set iInWord = TRUE
 
 CheckNewline:
-        // if (iChar == '\n')
-        adr     x1, iChar                 // Compute address of iChar
-        ldr     w2, [x1]                  // Load iChar
-        cmp     w2, #NEWLINE              // Compare iChar with newline character
-        bne     Loop_Next                 // Skip if not newline
+        // Check if iChar is a newline
+        adr     x1, iChar
+        ldr     w2, [x1]
+        cmp     w2, #NEWLINE
+        bne     Loop_Start            // Continue if not newline
 
-        // lLineCount++;
-        adr     x1, lLineCount            // Compute address of lLineCount
-        ldr     x2, [x1]                  // Load lLineCount
-        add     x2, x2, #1                // Increment lLineCount
-        str     x2, [x1]                  // Store updated lLineCount
+        adr     x1, lLineCount
+        ldr     x2, [x1]
+        add     x2, x2, #1            // Increment line count
+        str     x2, [x1]
 
-Loop_Next:
-        b       Loop_Start                // Repeat loop
+        b       Loop_Start
 
 Loop_End:
-        // if (iInWord)
-        adr     x1, iInWord               // Compute address of iInWord
-        ldr     w2, [x1]                  // Load iInWord
-        cmp     w2, #0                    // Compare iInWord with FALSE
-        beq     AfterFinalWordCount       // Skip if iInWord == FALSE
+        // Handle last word (if iInWord == TRUE)
+        adr     x1, iInWord
+        ldr     w2, [x1]
+        cmp     w2, #TRUE
+        beq     FinalWord
 
-        // lWordCount++;
-        adr     x1, lWordCount            // Compute address of lWordCount
-        ldr     x2, [x1]                  // Load lWordCount
-        add     x2, x2, #1                // Increment lWordCount
-        str     x2, [x1]                  // Store updated lWordCount
+        b       PrintResults
 
-AfterFinalWordCount:
-        // printf("%7ld %7ld %7ld\n", lLineCount, lWordCount, lCharCount);
-        adr     x0, fmt_string            // Compute address of format string
-        adr     x1, lLineCount            // Compute address of lLineCount
-        ldr     x1, [x1]                  // Load lLineCount
-        adr     x2, lWordCount            // Compute address of lWordCount
-        ldr     x2, [x2]                  // Load lWordCount
-        adr     x3, lCharCount            // Compute address of lCharCount
-        ldr     x3, [x3]                  // Load lCharCount
-        bl      printf                    // Call printf()
+FinalWord:
+        adr     x1, lWordCount
+        ldr     x2, [x1]
+        add     x2, x2, #1            // Increment word count
+        str     x2, [x1]
 
-        // return 0;
-        mov     w0, #0                    // Set return value to 0
-        ldr     x30, [sp]                 // Restore return address from stack
-        add     sp, sp, #STACK_FRAME_SIZE // Deallocate stack frame
+PrintResults:
+        // Print results
+        adr     x0, fmt_string
+        ldr     x1, lLineCount
+        ldr     x2, lWordCount
+        ldr     x3, lCharCount
+        bl      printf
+
+        // Exit program
+        mov     w0, #0
+        ldp     x29, x30, [sp]
+        add     sp, sp, #STACK_FRAME_SIZE
         ret
