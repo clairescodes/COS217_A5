@@ -58,14 +58,14 @@ return_larger:
 /*--------------------------------------------------------------------*/
 BigInt_add:
     /* Prologue */
-    stp     x29, x30, [sp, #-16]!
-    mov     x29, sp
-    sub     sp, sp, #48
+    stp     x29, x30, [sp, #-16]!      // Save x29 and x30, adjust sp
+    mov     x29, sp                    // Set frame pointer
+    sub     sp, sp, #48                // Allocate space for local variables (48 bytes)
 
     /* Store parameters on the stack */
-    str     x0, [x29, OADDEND1]
-    str     x1, [x29, OADDEND2]
-    str     x2, [x29, OSUM]
+    str     x0, [x29, OADDEND1]        // Store oAddend1
+    str     x1, [x29, OADDEND2]        // Store oAddend2
+    str     x2, [x29, OSUM]            // Store oSum
 
     /* Zero-initialize oSum->aulDigits */
     ldr     x0, [x29, OSUM]            // Load oSum
@@ -80,15 +80,16 @@ zero_init_loop:
 zero_init_done:
 
     /* Determine lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength) */
-    ldr     x0, [x29, OADDEND1]
-    ldr     x0, [x0, LLENGTH]
-    ldr     x1, [x29, OADDEND2]
-    ldr     x1, [x1, LLENGTH]
-    bl      BigInt_larger
-    str     x0, [x29, LSUMLENGTH]
+    ldr     x0, [x29, OADDEND1]        // Load oAddend1
+    ldr     x0, [x0, LLENGTH]          // x0 = oAddend1->lLength
+    ldr     x1, [x29, OADDEND2]        // Load oAddend2
+    ldr     x1, [x1, LLENGTH]          // x1 = oAddend2->lLength
+    bl      BigInt_larger              // Call BigInt_larger(x0, x1)
+    str     x0, [x29, LSUMLENGTH]      // Store lSumLength
 
-    /* Initialize lIndex = 0 */
-    mov     x0, 0
+    /* Initialize ulCarry = 0 and lIndex = 0 */
+    mov     x0, 0                      // Reset carry and index
+    str     x0, [x29, ULCARRY]
     str     x0, [x29, LINDEX]
 
 addition_loop:
@@ -98,51 +99,42 @@ addition_loop:
     cmp     x0, x1
     bge     end_addition_loop
 
-    /* Load ulCarry and reset it to 0 */
+    /* Load ulCarry */
     ldr     x2, [x29, ULCARRY]         // x2 = ulCarry
-    mov     x7, 0                      // Reset ulCarry to 0
-    str     x7, [x29, ULCARRY]
-
-    /* ulSum = ulCarry */
-    mov     x6, x2                     // x6 = ulSum = ulCarry
 
     /* Load oAddend1->aulDigits[lIndex] */
-    ldr     x3, [x29, OADDEND1]
-    add     x3, x3, AULDIGITS
-    ldr     x4, [x29, LINDEX]
-    lsl     x4, x4, #3
-    add     x3, x3, x4
-    ldr     x3, [x3]
+    ldr     x3, [x29, OADDEND1]        // x3 = oAddend1
+    add     x3, x3, AULDIGITS          // x3 = &oAddend1->aulDigits
+    ldr     x4, [x29, LINDEX]          // x4 = lIndex
+    lsl     x4, x4, #3                 // x4 = lIndex * 8
+    add     x3, x3, x4                 // x3 = &oAddend1->aulDigits[lIndex]
+    ldr     x3, [x3]                   // x3 = oAddend1->aulDigits[lIndex]
 
-    /* Add oAddend1->aulDigits[lIndex] to ulSum */
-    adds    x6, x6, x3
-    /* Update ulCarry if overflow occurred */
-    cset    x7, cs                     // x7 = carry from first addition
+    /* Add ulCarry and oAddend1->aulDigits[lIndex] */
+    adds    x6, x2, x3                 // x6 = ulCarry + oAddend1->aulDigits[lIndex]; updates flags
 
     /* Load oAddend2->aulDigits[lIndex] */
-    ldr     x5, [x29, OADDEND2]
-    add     x5, x5, AULDIGITS
-    ldr     x4, [x29, LINDEX]
-    lsl     x4, x4, #3
-    add     x5, x5, x4
-    ldr     x5, [x5]
+    ldr     x5, [x29, OADDEND2]        // x5 = oAddend2
+    add     x5, x5, AULDIGITS          // x5 = &oAddend2->aulDigits
+    ldr     x4, [x29, LINDEX]          // x4 = lIndex
+    lsl     x4, x4, #3                 // x4 = lIndex * 8
+    add     x5, x5, x4                 // x5 = &oAddend2->aulDigits[lIndex]
+    ldr     x5, [x5]                   // x5 = oAddend2->aulDigits[lIndex]
 
-    /* Add oAddend2->aulDigits[lIndex] to ulSum */
-    adds    x6, x6, x5
-    /* Update ulCarry if overflow occurred */
-    cset    x8, cs                     // x8 = carry from second addition
+    /* Add oAddend2->aulDigits[lIndex] with carry */
+    adcs    x6, x6, x5                 // x6 = x6 + oAddend2->aulDigits[lIndex] + carry; updates flags
 
-    /* Combine ulCarry from both additions */
-    orr     x7, x7, x8                 // ulCarry |= x8
+    /* Update ulCarry based on the carry flag */
+    cset    x7, cs                     // x7 = (carry flag is set) ? 1 : 0
     str     x7, [x29, ULCARRY]         // Store updated ulCarry
 
     /* Store ulSum in oSum->aulDigits[lIndex] */
-    ldr     x8, [x29, OSUM]
-    add     x8, x8, AULDIGITS
-    ldr     x9, [x29, LINDEX]
-    lsl     x9, x9, #3
-    add     x8, x8, x9
-    str     x6, [x8]
+    ldr     x8, [x29, OSUM]            // x8 = oSum
+    add     x8, x8, AULDIGITS          // x8 = &oSum->aulDigits
+    ldr     x9, [x29, LINDEX]          // x9 = lIndex
+    lsl     x9, x9, #3                 // x9 = lIndex * 8
+    add     x8, x8, x9                 // x8 = &oSum->aulDigits[lIndex]
+    str     x6, [x8]                   // oSum->aulDigits[lIndex] = ulSum
 
     /* Increment lIndex */
     ldr     x0, [x29, LINDEX]
@@ -153,20 +145,23 @@ addition_loop:
 end_addition_loop:
     /* Check if ulCarry == 1 */
     ldr     x7, [x29, ULCARRY]
-    cbz     x7, set_sum_length         // If ulCarry == 0, skip adding extra digit
+    cmp     x7, 1
+    bne     set_sum_length             // If ulCarry != 1, skip adding extra digit
 
     /* Handle carry overflow */
     ldr     x0, [x29, LSUMLENGTH]      // x0 = lSumLength
     mov     x1, MAX_DIGITS
+    sub     x1, x1, 1                  // x1 = MAX_DIGITS - 1
     cmp     x0, x1
-    bge     returnFalse                // If lSumLength >= MAX_DIGITS, return FALSE
+    bgt     returnFalse                // If lSumLength > MAX_DIGITS - 1, return FALSE
 
     /* oSum->aulDigits[lSumLength] = 1 */
-    ldr     x8, [x29, OSUM]
-    add     x8, x8, AULDIGITS
-    lsl     x9, x0, #3
-    add     x8, x8, x9
-    str     x7, [x8]                   // oSum->aulDigits[lSumLength] = 1
+    ldr     x8, [x29, OSUM]            // x8 = oSum
+    add     x8, x8, AULDIGITS          // x8 = &oSum->aulDigits
+    lsl     x9, x0, #3                 // x9 = lSumLength * 8
+    add     x8, x8, x9                 // x8 = &oSum->aulDigits[lSumLength]
+    mov     x6, 1
+    str     x6, [x8]                   // oSum->aulDigits[lSumLength] = 1
 
     /* Increment lSumLength */
     add     x0, x0, 1
@@ -176,7 +171,7 @@ set_sum_length:
     /* Set oSum->lLength = lSumLength */
     ldr     x0, [x29, OSUM]
     ldr     x1, [x29, LSUMLENGTH]
-    str     x1, [x0, LLENGTH]
+    str     x1, [x0, LLENGTH]          // oSum->lLength = lSumLength
 
     /* Return TRUE */
     mov     x0, TRUE
@@ -188,8 +183,8 @@ returnFalse:
 
 end_BigInt_add:
     /* Epilogue */
-    add     sp, sp, #48
-    ldp     x29, x30, [sp], #16
-    ret
+    add     sp, sp, #48                // Deallocate local variables
+    ldp     x29, x30, [sp], #16        // Restore x29 and x30, adjust sp
+    ret                                 // Return from function
 
-.size BigInt_add, . - BigInt_add
+    .size BigInt_add, . - BigInt_add
