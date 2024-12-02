@@ -102,27 +102,49 @@ addition_loop:
     /* Load ulCarry */
     ldr     x2, [x29, ULCARRY]         // x2 = ulCarry
 
+    /* Load oAddend1->lLength */
+    ldr     x10, [x29, OADDEND1]
+    ldr     x11, [x10, LLENGTH]        // x11 = oAddend1->lLength
+
+    /* Check if lIndex < oAddend1->lLength */
+    ldr     x0, [x29, LINDEX]
+    cmp     x0, x11
+    bge     load_zero_addend1          // If lIndex >= oAddend1->lLength, digit is 0
+
     /* Load oAddend1->aulDigits[lIndex] */
-    ldr     x3, [x29, OADDEND1]        // x3 = oAddend1
-    add     x3, x3, AULDIGITS          // x3 = &oAddend1->aulDigits
-    ldr     x4, [x29, LINDEX]          // x4 = lIndex
-    lsl     x4, x4, #3                 // x4 = lIndex * 8
-    add     x3, x3, x4                 // x3 = &oAddend1->aulDigits[lIndex]
-    ldr     x3, [x3]                   // x3 = oAddend1->aulDigits[lIndex]
+    add     x10, x10, AULDIGITS        // x10 = &oAddend1->aulDigits
+    lsl     x12, x0, #3                // x12 = lIndex * 8
+    add     x10, x10, x12              // x10 = &oAddend1->aulDigits[lIndex]
+    ldr     x3, [x10]                  // x3 = oAddend1->aulDigits[lIndex]
+    b       continue_addend1
+load_zero_addend1:
+    mov     x3, 0                      // x3 = 0
+continue_addend1:
 
     /* Add ulCarry and oAddend1->aulDigits[lIndex] */
-    adds    x6, x2, x3                 // x6 = ulCarry + oAddend1->aulDigits[lIndex]; updates flags
+    adds    x6, x2, x3                 // x6 = ulCarry + oAddend1->digit; updates flags
+
+    /* Load oAddend2->lLength */
+    ldr     x13, [x29, OADDEND2]
+    ldr     x14, [x13, LLENGTH]        // x14 = oAddend2->lLength
+
+    /* Check if lIndex < oAddend2->lLength */
+    ldr     x0, [x29, LINDEX]
+    cmp     x0, x14
+    bge     load_zero_addend2          // If lIndex >= oAddend2->lLength, digit is 0
 
     /* Load oAddend2->aulDigits[lIndex] */
-    ldr     x5, [x29, OADDEND2]        // x5 = oAddend2
-    add     x5, x5, AULDIGITS          // x5 = &oAddend2->aulDigits
-    ldr     x4, [x29, LINDEX]          // x4 = lIndex
-    lsl     x4, x4, #3                 // x4 = lIndex * 8
-    add     x5, x5, x4                 // x5 = &oAddend2->aulDigits[lIndex]
-    ldr     x5, [x5]                   // x5 = oAddend2->aulDigits[lIndex]
+    add     x13, x13, AULDIGITS        // x13 = &oAddend2->aulDigits
+    lsl     x15, x0, #3                // x15 = lIndex * 8
+    add     x13, x13, x15              // x13 = &oAddend2->aulDigits[lIndex]
+    ldr     x5, [x13]                  // x5 = oAddend2->aulDigits[lIndex]
+    b       continue_addend2
+load_zero_addend2:
+    mov     x5, 0                      // x5 = 0
+continue_addend2:
 
     /* Add oAddend2->aulDigits[lIndex] with carry */
-    adcs    x6, x6, x5                 // x6 = x6 + oAddend2->aulDigits[lIndex] + carry; updates flags
+    adcs    x6, x6, x5                 // x6 = x6 + oAddend2->digit + carry; updates flags
 
     /* Update ulCarry based on the carry flag */
     cset    x7, cs                     // x7 = (carry flag is set) ? 1 : 0
@@ -131,8 +153,7 @@ addition_loop:
     /* Store ulSum in oSum->aulDigits[lIndex] */
     ldr     x8, [x29, OSUM]            // x8 = oSum
     add     x8, x8, AULDIGITS          // x8 = &oSum->aulDigits
-    ldr     x9, [x29, LINDEX]          // x9 = lIndex
-    lsl     x9, x9, #3                 // x9 = lIndex * 8
+    lsl     x9, x0, #3                 // x9 = lIndex * 8
     add     x8, x8, x9                 // x8 = &oSum->aulDigits[lIndex]
     str     x6, [x8]                   // oSum->aulDigits[lIndex] = ulSum
 
