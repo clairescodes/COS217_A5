@@ -97,14 +97,14 @@ addition_loop:
     ldr     x0, [x29, LINDEX]
     ldr     x1, [x29, LSUMLENGTH]
     cmp     x0, x1
-    bhs     end_addition_loop          // Use 'bhs' for unsigned '>='
+    bhs     end_addition_loop
 
     /* Load ulCarry */
     ldr     x2, [x29, ULCARRY]
 
     /* Initialize ulAddend1 and ulAddend2 to zero */
-    mov     x3, 0
-    mov     x5, 0
+    mov     x3, 0  // ulAddend1
+    mov     x5, 0  // ulAddend2
 
     /* Load oAddend1->lLength and oAddend2->lLength */
     ldr     x10, [x29, OADDEND1]
@@ -114,21 +114,21 @@ addition_loop:
 
     /* Check if lIndex < oAddend1->lLength */
     cmp     x0, x11
-    bhs     skip_addend1
+    bhs     skip_load_addend1
     /* Load oAddend1->aulDigits[lIndex] */
     add     x14, x10, AULDIGITS
     lsl     x15, x0, #3
     ldr     x3, [x14, x15]
-skip_addend1:
+skip_load_addend1:
 
     /* Check if lIndex < oAddend2->lLength */
     cmp     x0, x13
-    bhs     skip_addend2
+    bhs     skip_load_addend2
     /* Load oAddend2->aulDigits[lIndex] */
     add     x16, x12, AULDIGITS
     lsl     x17, x0, #3
     ldr     x5, [x16, x17]
-skip_addend2:
+skip_load_addend2:
 
     /* Compute ulSum = ulAddend1 + ulAddend2 */
     adds    x6, x3, x5
