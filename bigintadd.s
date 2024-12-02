@@ -67,18 +67,6 @@ BigInt_add:
     str     x1, [x29, OADDEND2]        // Store oAddend2
     str     x2, [x29, OSUM]            // Store oSum
 
-    /* Zero-initialize oSum->aulDigits */
-    ldr     x0, [x29, OSUM]            // Load oSum
-    add     x0, x0, AULDIGITS          // x0 = &oSum->aulDigits
-    mov     x1, MAX_DIGITS             // x1 = MAX_DIGITS
-    mov     x2, 0                      // x2 = 0 (value to store)
-zero_init_loop:
-    cbz     x1, zero_init_done         // If x1 == 0, exit loop
-    str     x2, [x0], #8               // Store 0 and increment pointer by 8
-    sub     x1, x1, 1                  // Decrement counter
-    b       zero_init_loop
-zero_init_done:
-
     /* Determine lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength) */
     ldr     x0, [x29, OADDEND1]        // Load oAddend1
     ldr     x0, [x0, LLENGTH]          // x0 = oAddend1->lLength
@@ -111,7 +99,6 @@ addition_loop:
     ldr     x11, [x10, LLENGTH]        // x11 = oAddend1->lLength
 
     /* Check if lIndex < oAddend1->lLength */
-    ldr     x0, [x29, LINDEX]
     cmp     x0, x11
     bge     skip_load_addend1
     /* Load oAddend1->aulDigits[lIndex] */
@@ -126,7 +113,6 @@ skip_load_addend1:
     ldr     x14, [x13, LLENGTH]        // x14 = oAddend2->lLength
 
     /* Check if lIndex < oAddend2->lLength */
-    ldr     x0, [x29, LINDEX]
     cmp     x0, x14
     bge     skip_load_addend2
     /* Load oAddend2->aulDigits[lIndex] */
@@ -147,13 +133,11 @@ skip_load_addend2:
     /* Store ulSum in oSum->aulDigits[lIndex] */
     ldr     x8, [x29, OSUM]            // x8 = oSum
     add     x8, x8, AULDIGITS          // x8 = &oSum->aulDigits
-    ldr     x0, [x29, LINDEX]
     lsl     x9, x0, #3                 // x9 = lIndex * 8
     add     x8, x8, x9                 // x8 = &oSum->aulDigits[lIndex]
     str     x6, [x8]                   // oSum->aulDigits[lIndex] = ulSum
 
     /* Increment lIndex */
-    ldr     x0, [x29, LINDEX]
     add     x0, x0, 1
     str     x0, [x29, LINDEX]
     b       addition_loop
@@ -167,9 +151,8 @@ end_addition_loop:
     /* Handle carry overflow */
     ldr     x0, [x29, LSUMLENGTH]      // x0 = lSumLength
     mov     x1, MAX_DIGITS
-    sub     x1, x1, 1                  // x1 = MAX_DIGITS - 1
     cmp     x0, x1
-    bgt     returnFalse                // If lSumLength > MAX_DIGITS - 1, return FALSE
+    beq     returnFalse                // If lSumLength == MAX_DIGITS, return FALSE
 
     /* oSum->aulDigits[lSumLength] = 1 */
     ldr     x8, [x29, OSUM]            // x8 = oSum
@@ -191,16 +174,9 @@ set_sum_length:
 
     /* Return TRUE */
     mov     x0, TRUE
-    b       end_BigInt_add
-
-returnFalse:
-    /* Return FALSE */
-    mov     x0, FALSE
 
 end_BigInt_add:
     /* Epilogue */
     add     sp, sp, #48                // Deallocate local variables
     ldp     x29, x30, [sp], #16        // Restore x29 and x30, adjust sp
     ret                                 // Return from function
-
-    .size BigInt_add, . - BigInt_add
