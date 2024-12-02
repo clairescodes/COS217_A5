@@ -1,3 +1,61 @@
+/* bigintadd.s */
+
+/*--------------------------------------------------------------------*/
+/* Constants and Offsets                                              */
+/*--------------------------------------------------------------------*/
+
+    .equ    MAX_DIGITS, 32768
+    .equ    TRUE, 1
+    .equ    FALSE, 0
+
+    /* Offsets relative to x29 (frame pointer) */
+    /* Local variables and parameters stored at negative offsets */
+    .equ    ULCARRY, -8           // unsigned long ulCarry;
+    .equ    LINDEX, -16           // long lIndex;
+    .equ    LSUMLENGTH, -24       // long lSumLength;
+    .equ    OADDEND1, -32         // BigInt_T oAddend1;
+    .equ    OADDEND2, -40         // BigInt_T oAddend2;
+    .equ    OSUM, -48             // BigInt_T oSum;
+    /* Total frame size: 48 bytes (must be multiple of 16) */
+
+    /* Offsets within the BigInt_T structure */
+    .equ    LLENGTH, 0            // Offset of lLength in BigInt_T
+    .equ    AULDIGITS, 8          // Offset of aulDigits in BigInt_T
+
+    .global BigInt_larger
+    .global BigInt_add
+
+/*--------------------------------------------------------------------*/
+/* BigInt_larger: Returns the larger of lLength1 and lLength2         */
+/*--------------------------------------------------------------------*/
+BigInt_larger:
+    /* Prologue */
+    stp     x29, x30, [sp, #-16]!      // Save x29 and x30, adjust sp
+    mov     x29, sp                    // Set frame pointer
+
+    /* Compare lLength1 and lLength2 */
+    cmp     x0, x1
+    bgt     larger_lLength1            // If lLength1 > lLength2, branch
+
+    /* lLength2 is larger or equal */
+    mov     x0, x1                     // Return lLength2
+    b       return_larger
+
+larger_lLength1:
+    /* lLength1 is larger */
+    /* x0 already contains lLength1 */
+
+return_larger:
+    /* Epilogue */
+    ldp     x29, x30, [sp], #16        // Restore x29 and x30, adjust sp
+    ret                                 // Return from function
+
+    .size BigInt_larger, . - BigInt_larger
+
+/*--------------------------------------------------------------------*/
+/* BigInt_add: Adds two BigInt numbers                                */
+/* Returns TRUE (1) if addition is successful, FALSE (0) if overflow  */
+/*--------------------------------------------------------------------*/
 BigInt_add:
     /* Prologue */
     stp     x29, x30, [sp, #-16]!
