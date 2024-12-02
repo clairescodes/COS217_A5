@@ -117,7 +117,7 @@ addition_loop:
     /* Add oAddend1->aulDigits[lIndex] to ulSum */
     adds    x6, x6, x3
     /* Update ulCarry if overflow occurred */
-    cset    x7, c                      // x7 = carry from first addition
+    cset    x7, cs                     // x7 = carry from first addition
 
     /* Load oAddend2->aulDigits[lIndex] */
     ldr     x5, [x29, OADDEND2]
@@ -130,7 +130,7 @@ addition_loop:
     /* Add oAddend2->aulDigits[lIndex] to ulSum */
     adds    x6, x6, x5
     /* Update ulCarry if overflow occurred */
-    cset    x8, c                      // x8 = carry from second addition
+    cset    x8, cs                     // x8 = carry from second addition
 
     /* Combine ulCarry from both additions */
     orr     x7, x7, x8                 // ulCarry |= x8
