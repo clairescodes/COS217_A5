@@ -121,9 +121,8 @@ skip_load_addend1:
 skip_load_addend2:
 
     /* Compute ulSum = ulAddend1 + ulAddend2 + ulCarry */
-    adds    x6, x3, x5                 // x6 = ulAddend1 + ulAddend2; updates flags
-    adc     x6, x6, x2                 // x6 = x6 + ulCarry; updates flags
-
+    adds    x6, x3, x2                 // x6 = ulAddend1 + ulCarry; updates flags
+    adcs    x6, x6, x5                 // x6 = x6 + ulAddend2 + carry; updates flags
     /* Update ulCarry */
     cset    x7, cs                     // x7 = (carry flag is set) ? 1 : 0
     str     x7, [x29, ULCARRY]         // Store ulCarry
