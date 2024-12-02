@@ -151,8 +151,9 @@ end_addition_loop:
     /* Handle carry overflow */
     ldr     x0, [x29, LSUMLENGTH]      // x0 = lSumLength
     mov     x1, MAX_DIGITS
+    sub     x1, x1, 1                  // x1 = MAX_DIGITS - 1
     cmp     x0, x1
-    bge     returnFalse                // If lSumLength >= MAX_DIGITS, return FALSE
+    bgt     returnFalse                // If lSumLength > MAX_DIGITS - 1, return FALSE
 
     /* oSum->aulDigits[lSumLength] = 1 */
     ldr     x8, [x29, OSUM]            // x8 = oSum
