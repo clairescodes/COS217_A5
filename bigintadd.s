@@ -75,6 +75,18 @@ BigInt_add:
     bl      BigInt_larger              // Call BigInt_larger(x0, x1)
     str     x0, [x29, LSUMLENGTH]      // Store lSumLength
 
+    /* Zero-initialize oSum->aulDigits up to lSumLength */
+    ldr     x0, [x29, OSUM]
+    add     x0, x0, AULDIGITS
+    ldr     x1, [x29, LSUMLENGTH]
+    mov     x2, 0
+zero_init_loop:
+    cbz     x1, zero_init_done
+    str     x2, [x0], #8
+    sub     x1, x1, 1
+    b       zero_init_loop
+zero_init_done:
+
     /* Initialize ulCarry = 0 and lIndex = 0 */
     mov     x0, 0                      // Reset carry and index
     str     x0, [x29, ULCARRY]
@@ -123,6 +135,7 @@ skip_load_addend2:
     /* Compute ulSum = ulAddend1 + ulAddend2 + ulCarry */
     adds    x6, x3, x2                 // x6 = ulAddend1 + ulCarry; updates flags
     adcs    x6, x6, x5                 // x6 = x6 + ulAddend2 + carry; updates flags
+    
     /* Update ulCarry */
     cset    x7, cs                     // x7 = (carry flag is set) ? 1 : 0
     str     x7, [x29, ULCARRY]         // Store ulCarry
@@ -145,8 +158,10 @@ end_addition_loop:
     /* Load lSumLength */
     ldr     x0, [x29, LSUMLENGTH]      // x0 = lSumLength
     mov     x1, MAX_DIGITS
+    sub     x1, x1, 1                  // x1 = MAX_DIGITS - 1
     cmp     x0, x1
-    beq     returnFalse                // If lSumLength == MAX_DIGITS, overflow
+    bgt     returnFalse                // If lSumLength > MAX_DIGITS - 1, overflow
+
 
     /* oSum->aulDigits[lSumLength] = 1 */
     ldr     x8, [x29, OSUM]
