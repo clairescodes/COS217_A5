@@ -185,6 +185,4 @@ end_BigInt_add:
     /* Epilogue */
     add     sp, sp, #48                // Deallocate local variables
     ldp     x29, x30, [sp], #16        // Restore x29 and x30, adjust sp
-    ret                                 // Return from function
-
-    .size BigInt_add, . - BigInt_add
+    ret                                // Return from function
