@@ -67,18 +67,6 @@ BigInt_add:
     str     x1, [x29, OADDEND2]        // Store oAddend2
     str     x2, [x29, OSUM]            // Store oSum
 
-    /* Zero-initialize oSum->aulDigits */
-    ldr     x0, [x29, OSUM]            // Load oSum
-    add     x0, x0, AULDIGITS          // x0 = &oSum->aulDigits
-    mov     x1, MAX_DIGITS             // x1 = MAX_DIGITS
-    mov     x2, 0                      // x2 = 0 (value to store)
-zero_init_loop:
-    cbz     x1, zero_init_done         // If x1 == 0, exit loop
-    str     x2, [x0], #8               // Store 0 and increment pointer by 8
-    sub     x1, x1, 1                  // Decrement counter
-    b       zero_init_loop
-zero_init_done:
-
     /* Determine lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength) */
     ldr     x0, [x29, OADDEND1]        // Load oAddend1
     ldr     x0, [x0, LLENGTH]          // x0 = oAddend1->lLength
@@ -102,49 +90,46 @@ addition_loop:
     /* Load ulCarry */
     ldr     x2, [x29, ULCARRY]         // x2 = ulCarry
 
+    /* Prepare x0 = lIndex */
+    ldr     x0, [x29, LINDEX]
+
+    /* Initialize x3 and x5 to 0 */
+    mov     x3, 0                      // x3 = 0 (oAddend1 digit)
+    mov     x5, 0                      // x5 = 0 (oAddend2 digit)
+
     /* Load oAddend1->lLength */
     ldr     x10, [x29, OADDEND1]
     ldr     x11, [x10, LLENGTH]        // x11 = oAddend1->lLength
 
     /* Check if lIndex < oAddend1->lLength */
-    ldr     x0, [x29, LINDEX]
     cmp     x0, x11
-    bge     load_zero_addend1          // If lIndex >= oAddend1->lLength, digit is 0
-
+    bge     skip_load_addend1
     /* Load oAddend1->aulDigits[lIndex] */
     add     x10, x10, AULDIGITS        // x10 = &oAddend1->aulDigits
     lsl     x12, x0, #3                // x12 = lIndex * 8
     add     x10, x10, x12              // x10 = &oAddend1->aulDigits[lIndex]
     ldr     x3, [x10]                  // x3 = oAddend1->aulDigits[lIndex]
-    b       continue_addend1
-load_zero_addend1:
-    mov     x3, 0                      // x3 = 0
-continue_addend1:
+skip_load_addend1:
 
     /* Add ulCarry and oAddend1->aulDigits[lIndex] */
-    adds    x6, x2, x3                 // x6 = ulCarry + oAddend1->digit; updates flags
+    adds    x6, x2, x3                 // x6 = ulCarry + oAddend1 digit; updates flags
 
     /* Load oAddend2->lLength */
     ldr     x13, [x29, OADDEND2]
     ldr     x14, [x13, LLENGTH]        // x14 = oAddend2->lLength
 
     /* Check if lIndex < oAddend2->lLength */
-    ldr     x0, [x29, LINDEX]
     cmp     x0, x14
-    bge     load_zero_addend2          // If lIndex >= oAddend2->lLength, digit is 0
-
+    bge     skip_load_addend2
     /* Load oAddend2->aulDigits[lIndex] */
     add     x13, x13, AULDIGITS        // x13 = &oAddend2->aulDigits
     lsl     x15, x0, #3                // x15 = lIndex * 8
     add     x13, x13, x15              // x13 = &oAddend2->aulDigits[lIndex]
     ldr     x5, [x13]                  // x5 = oAddend2->aulDigits[lIndex]
-    b       continue_addend2
-load_zero_addend2:
-    mov     x5, 0                      // x5 = 0
-continue_addend2:
+skip_load_addend2:
 
     /* Add oAddend2->aulDigits[lIndex] with carry */
-    adcs    x6, x6, x5                 // x6 = x6 + oAddend2->digit + carry; updates flags
+    adcs    x6, x6, x5                 // x6 = x6 + oAddend2 digit + carry; updates flags
 
     /* Update ulCarry based on the carry flag */
     cset    x7, cs                     // x7 = (carry flag is set) ? 1 : 0
@@ -172,9 +157,8 @@ end_addition_loop:
     /* Handle carry overflow */
     ldr     x0, [x29, LSUMLENGTH]      // x0 = lSumLength
     mov     x1, MAX_DIGITS
-    sub     x1, x1, 1                  // x1 = MAX_DIGITS - 1
     cmp     x0, x1
-    bgt     returnFalse                // If lSumLength > MAX_DIGITS - 1, return FALSE
+    bge     returnFalse                // If lSumLength >= MAX_DIGITS, return FALSE
 
     /* oSum->aulDigits[lSumLength] = 1 */
     ldr     x8, [x29, OSUM]            // x8 = oSum
