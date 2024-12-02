@@ -67,6 +67,18 @@ BigInt_add:
     str     x1, [x29, OADDEND2]        // Store oAddend2
     str     x2, [x29, OSUM]            // Store oSum
 
+    /* Zero-initialize oSum->aulDigits */
+    ldr     x0, [x29, OSUM]            // Load oSum
+    add     x0, x0, AULDIGITS          // x0 = &oSum->aulDigits
+    mov     x1, MAX_DIGITS             // x1 = MAX_DIGITS
+    mov     x2, 0                      // x2 = 0 (value to store)
+zero_init_loop:
+    cbz     x1, zero_init_done         // If x1 == 0, exit loop
+    str     x2, [x0], #8               // Store 0 and increment pointer by 8
+    sub     x1, x1, 1                  // Decrement counter
+    b       zero_init_loop
+zero_init_done:
+
     /* Determine lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength) */
     ldr     x0, [x29, OADDEND1]        // Load oAddend1
     ldr     x0, [x0, LLENGTH]          // x0 = oAddend1->lLength
@@ -140,7 +152,7 @@ end_addition_loop:
     ldr     x0, [x29, LSUMLENGTH]      // x0 = lSumLength
     mov     x1, MAX_DIGITS
     cmp     x0, x1
-    beq     returnFalse                // If lSumLength == MAX_DIGITS, return FALSE
+    bge     returnFalse                // If lSumLength >= MAX_DIGITS, return FALSE
 
     /* oSum->aulDigits[lSumLength] = 1 */
     ldr     x8, [x29, OSUM]            // x8 = oSum
