@@ -50,7 +50,7 @@ read:
 
         // if (ch == EOF) goto endloop;
         ldr     w1, [x1]
-        cmp     w1, EOF
+        cmp     w1, -1
         beq     endloop
 
 processchar:
@@ -138,4 +138,3 @@ exit:
         ldr     x30, [sp]
         add     sp, sp, MAIN_STACK_BYTECOUNT
         ret
-        
