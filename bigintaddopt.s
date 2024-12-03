@@ -20,7 +20,11 @@
         // always multiple of 16 
         .equ    BIGINT_LARGER_STACK_BYTECOUNT, 32
 
-        // local variables and parameter registers 
+        // local variables and parameter registers
+        .equ     lLarger, 8 
+        .equ     lLength1, 16
+        .equ     lLength2, 24
+
         lLarger .req x19 
         lLength1 .req x20 
         lLength2 .req x21 
@@ -35,12 +39,15 @@ BigInt_larger:
         // Prolog
         sub     sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
         str     x30, [sp]
+        str     x19, [sp, lLarger]
+        str     x20, [sp, lLength1]
+        str     x21, [sp, lLength2]
 
         // long lLarger;
         mov     lLength1, x0 
         mov     lLength2, x1
 
-        cmp     lLength1, lLength2
+        cmp     x0, x1
         ble     else
 
         // lLarger = lLength1
@@ -57,10 +64,13 @@ return:
 
         // Epilog
         ldr     x30, [sp]
+        ldr     x19, [sp, lLarger]
+        ldr     x20, [sp, lLength1]
+        ldr     x21, [sp, lLength2] 
         add     sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
         ret
 
-        .size BigInt_larger, (. - BigInt_larger)
+        .size   BigInt_larger, (. - BigInt_larger)
 
        //--------------------------------------------------------------
        // Assign the sum of oAddend1 and oAddend2 to oSum.  
@@ -74,10 +84,20 @@ return:
         .equ     BIGINT_ADD_STACK_BYTECOUNT, 64
        
        // local variables and parameter offsets 
+        .equ     ulCarry, 8
+        .equ     ulSum, 16
+        .equ     lIndex, 24
+        .equ     lSumLength, 32  
+
         ulCarry         .req x19
         ulSum           .req x20
         lIndex          .req x21 
         lSumLength      .req x22
+
+        .equ     oAddend1, 40 
+        .equ     oAddend2, 48
+        .equ     oSum, 56
+
         oAddend1        .req x23
         oAddend2        .req x24
         oSum            .req x25
@@ -87,8 +107,16 @@ return:
         .global BigInt_add
 
 BigInt_add:
-        // Prolog: Reserve stack space
+        // Prolog 
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
+        str     x30, [sp]
+        str     x19, [sp, ulCarry]
+        str     x20, [sp, ulSum]
+        str     x21, [sp, lIndex]
+        str     x22, [sp, lSumLength]
+        str     x23, [sp, oAddend1]
+        str     x24, [sp, oAddend2]
+        str     x25, [sp, oSum]
 
         // Save parameters into callee-saved registers
         mov     oAddend1, x0
@@ -96,9 +124,9 @@ BigInt_add:
         mov     oSum, x2
 
         // lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength)
-        ldr     x0, [oAddend1]        // Load oAddend1->lLength
+        mov     x0, oAddend1        // Load oAddend1->lLength
         ldr     x0, [x0]
-        ldr     x1, [oAddend2]        // Load oAddend2->lLength
+        mov     x1, oAddend2        // Load oAddend2->lLength
         ldr     x1, [x1]
         bl      BigInt_larger
         mov     lSumLength, x0
@@ -112,8 +140,8 @@ BigInt_add:
         ldr     x0, [oSum]
         add     x0, x0, AULDIGITS
         mov     x1, 0
-        mov     x2, MAX_DIGITS
-        mov     x3, 8
+        mov     x2, AULDIGITS
+        mov     x3, MAX_DIGITS
         mul     x2, x2, x3
         bl      memset
 
