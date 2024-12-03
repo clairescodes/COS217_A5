@@ -114,12 +114,12 @@ BigInt_add:
         // memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
         ldr     x0, [sp, oSum]
         add     x0, x0, 8
-        mov     w1, xzr
+        mov     w1, 0
         mov     x2, MAX_DIGITS
         mov     x3, 8
         mul     x2, x2, x3 
         bl      memset
-        
+
 skip_clear:
         // ulCarry = 0;
         mov     x0, xzr
