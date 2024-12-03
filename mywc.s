@@ -57,7 +57,7 @@ processchar:
         // charCount++;
         adr     x0, lCharCount
         ldr     w2, [x0]
-        add     w2, w2, #1
+        add     w2, w2, 1
         str     w2, [x0]
 
         // if (isspace(ch)) goto whitespace;
@@ -80,7 +80,7 @@ whitespace:
         // wordCount++;
         adr     x0, lWordCount
         ldr     w1, [x0]
-        add     w1, w1, #1
+        add     w1, w1, 1
         str     w1, [x0]
 
         // inWord = FALSE;
@@ -92,11 +92,11 @@ checknewline:
         // if (ch == '\n') lineCount++;
         adr     x0, iChar
         ldr     w1, [x0]
-        cmp     w1, #10
+        cmp     w1, NEWLINE
         bne     read
         adr     x0, lLineCount
         ldr     w1, [x0]
-        add     w1, w1, #1
+        add     w1, w1, 1
         str     w1, [x0]
         b       read
 
@@ -118,7 +118,7 @@ endloop:
         beq     print
         adr     x0, lWordCount
         ldr     w1, [x0]
-        add     w1, w1, #1
+        add     w1, w1, 1
         str     w1, [x0]
 
 print:
