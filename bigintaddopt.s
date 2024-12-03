@@ -118,7 +118,7 @@ BigInt_add:
         str     x27, [sp, OADDEND2_OFFSET]
         str     x28, [sp, OSUM_OFFSET]
 
-        // Save parameters into callee-saved registers
+        // save parameters to callee saved registers
         mov     oAddend1, x0
         mov     oAddend2, x1
         mov     oSum, x2
@@ -131,7 +131,7 @@ BigInt_add:
         bl      BigInt_larger
         mov     lSumLength, x0
 
-        // Clear oSum memory if needed
+        // clear oSum memory if necessary  
         ldr     x0, [oSum]            // Load oSum->lLength
         cmp     x0, lSumLength
         ble     skip_clear
@@ -170,8 +170,8 @@ loop_start:
 
         // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
         cmp     x0, x1 
-        bhs     skip_carry_1 
-        mov     x19, 1
+        bhs     skip_carry_1  //ask emily bcs (161) 
+        mov     ulCarry, 1
 
 skip_carry_1:
         // ulSum += oAddend2->aulDigits[lIndex];
