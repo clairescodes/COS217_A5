@@ -204,7 +204,7 @@ check_carry_out:
         // if (ulCarry == 1) goto end 
         mov     x0, ulCarry 
         cmp     x0, 1 
-        bne     end 
+        bne     set_length 
 
         // if (lSumLength == MAX_DIGITS) goto add_carry 
         mov     x0, lSumLength
