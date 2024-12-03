@@ -21,9 +21,9 @@
         .equ    BIGINT_LARGER_STACK_BYTECOUNT, 32
 
         // local variables and parameter registers
-        .equ     lLarger, 8 
-        .equ     lLength1, 16
-        .equ     lLength2, 24
+        .equ     LLARGER, 8 
+        .equ     LLENGTH1, 16
+        .equ     LLENGTH2, 24
 
         lLarger .req x19 
         lLength1 .req x20 
@@ -39,9 +39,9 @@ BigInt_larger:
         // Prolog
         sub     sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
         str     x30, [sp]
-        str     x19, [sp, lLarger]
-        str     x20, [sp, lLength1]
-        str     x21, [sp, lLength2]
+        str     x19, [sp, LLARGER]
+        str     x20, [sp, LLENGTH1]
+        str     x21, [sp, LLENGTH2]
 
         // long lLarger;
         mov     lLength1, x0 
@@ -64,9 +64,9 @@ return:
 
         // Epilog
         ldr     x30, [sp]
-        ldr     x19, [sp, lLarger]
-        ldr     x20, [sp, lLength1]
-        ldr     x21, [sp, lLength2] 
+        ldr     x19, [sp, LLARGER]
+        ldr     x20, [sp, LLENGTH1]
+        ldr     x21, [sp, LLENGTH2]
         add     sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
         ret
 
