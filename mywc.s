@@ -123,7 +123,7 @@ endloop:
 
 print:
         // printf("%7ld %7ld %7ld\n", lLineCount, lWordCount, lCharCount);
-        adr     x0, printFormatStr
+        adr     x0, format
         adr     x1, lLineCount
         ldr     x1, [x1]
         adr     x2, lWordCount
