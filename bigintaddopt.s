@@ -256,3 +256,6 @@ return_add:
         // Epilog: Restore stack space
         add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         ret
+
+        .size   BigInt_larger, (. - BigInt_larger)
+        
