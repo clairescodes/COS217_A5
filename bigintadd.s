@@ -83,6 +83,8 @@ return:
         .equ     oAddend1, 40 
         .equ     oAddend2, 48
         .equ     oSum, 56
+
+        .equ     AULDIGITS, 8
         
         .global BigInt_add
 
@@ -113,7 +115,7 @@ BigInt_add:
 
         // memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
         ldr     x0, [sp, oSum]
-        add     x0, x0, 8
+        add     x0, x0, AULDIGITS
         mov     w1, 0
         mov     x2, MAX_DIGITS
         mov     x3, 8
@@ -145,6 +147,7 @@ loop_start:
 
         // ulSum += oAddend1->aulDigits[lIndex];
         ldr     x0, [sp, oAddend1]
+        add     x0, x0, AULDIGITS
         ldr     x1, [sp, lIndex]
         lsl     x1, x1, 3            // Multiply index by sizeof(unsigned long)
         add     x0, x0, x1
@@ -162,6 +165,7 @@ loop_start:
 skip_carry_1:
         // ulSum += oAddend2->aulDigits[lIndex];
         ldr     x0, [sp, oAddend2]
+        add     x0, x0, AULDIGITS
         ldr     x1, [sp, lIndex]
         lsl     x1, x1, 3
         add     x0, x0, x1
@@ -179,7 +183,7 @@ skip_carry_1:
 skip_carry_2:
         // oSum->aulDigits[lIndex] = ulSum;
         ldr     x0, [sp, oSum]
-        add     x0, x0, 8            // Point to aulDigits
+        add     x0, x0, AULDIGITS            // Point to aulDigits
         ldr     x1, [sp, lIndex]
         lsl     x1, x1, 3
         add     x0, x0, x1
@@ -211,7 +215,7 @@ check_carry_out:
 add_carry:
         // oSum->aulDigits[lSumLength] = 1;
         ldr     x0, [sp, oSum]
-        add     x0, x0, 8
+        add     x0, x0, AULDIGITS
         ldr     x1, [sp, lSumLength]
         lsl     x1, x1, 3
         add     x0, x0, x1
