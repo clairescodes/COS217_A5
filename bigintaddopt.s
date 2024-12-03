@@ -110,7 +110,7 @@ BigInt_add:
         // Prolog 
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         str     x30, [sp]
-        str     x22, [sp, ULCARRY]
+        str     x22, [sp, 8]
         str     x23, [sp, ULSUM]
         str     x24, [sp, LINDEX]
         str     x25, [sp, LSUMLENGTH]
