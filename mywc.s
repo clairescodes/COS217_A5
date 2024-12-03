@@ -2,30 +2,24 @@
 // mywc.s
 // Author: Emily Qian and Claire Shin
 //---------------------------------------------------------------------
-
         .section .rodata
 
-fmt_string:
+format:
         .string "%7ld %7ld %7ld\n" // Format string for printf
 
 //---------------------------------------------------------------------
-
         .section .data
 
         // long lLineCount = 0;
-        .global lLineCount
 lLineCount:      .quad 0
 
         // long lWordCount = 0;
-        .global lWordCount
 lWordCount:      .quad 0
 
         // long lCharCount = 0;
-        .global lCharCount
 lCharCount:      .quad 0
 
         // int iChar;
-        .global iChar
 iChar:           .word 0
 
         // int iInWord = FALSE;
@@ -33,135 +27,114 @@ iChar:           .word 0
 iInWord:         .word 0
 
 //---------------------------------------------------------------------
-
         .section .text
 
         // Define constants
-        .equ EOF, -1              // End of file
-        .equ TRUE, 1              // Boolean true
-        .equ FALSE, 0             // Boolean false
-        .equ NEWLINE, 10          // ASCII code for '\n'
-        .equ STACK_FRAME_SIZE, 64 // Stack frame size (aligned to 16 bytes)
+        .equ     TRUE, 1 
+        .equ     FALSE, 0 
+        .equ     NEWLINE, 10                    // ASCII code for '\n'
+        .equ     MAIN_STACK_BYTECOUNT, 16
 
         .global main
 
 main:
-        // Prologue: Adjust stack and save registers
-        sub     sp, sp, #STACK_FRAME_SIZE
-        stp     x29, x30, [sp]                  // Save x29 (fp) and x30 (lr)
-        stp     x19, x20, [sp, #16]             // Save x19 and x20
-        stp     x21, x22, [sp, #32]             // Save x21 and x22
-        str     x23, [sp, #48]                  // Save x23
-        mov     x29, sp
+        // Prolog
+        sub     sp, sp, MAIN_STACK_BYTECOUNT
+        str     x30, [sp]
 
-        // Load addresses of global variables into non-volatile registers
-        adr     x19, iChar          // x19 = &iChar
-        adr     x20, iInWord        // x20 = &iInWord
-        adr     x21, lCharCount     // x21 = &lCharCount
-        adr     x22, lLineCount     // x22 = &lLineCount
-        adr     x23, lWordCount     // x23 = &lWordCount
-
-        // Initialize lLineCount, lWordCount, lCharCount to 0
-        mov     x2, #0
-        str     x2, [x22]           // lLineCount = 0
-        str     x2, [x23]           // lWordCount = 0
-        str     x2, [x21]           // lCharCount = 0
-
-        // Initialize iInWord to FALSE
-        mov     w2, #FALSE
-        str     w2, [x20]           // iInWord = FALSE
-
-Loop_Start:
-        // Read a character: iChar = getchar()
+read:
+        // ch = getchar();
         bl      getchar
-        mov     w1, w0               // Move return value to w1
-        str     w1, [x19]            // Store getchar() result in iChar
+        adr     x1, iChar
+        str     w0, [x1]
 
-        // Check for EOF
-        cmp     w1, #-1              // Compare w1 with -1 (EOF)
-        beq     Loop_End             // Exit loop if EOF
+        // if (ch == EOF) goto endloop;
+        ldr     w1, [x1]
+        cmp     w1, EOF
+        beq     endloop
 
-        // Increment lCharCount
-        ldr     x2, [x21]            // Load lCharCount into x2
-        add     x2, x2, #1
-        str     x2, [x21]
+processchar:
+        // charCount++;
+        adr     x0, lCharCount
+        ldr     w2, [x0]
+        add     w2, w2, #1
+        str     w2, [x0]
 
-        // Prepare argument for isspace
-        // Ensure we only pass valid characters (0-255) to isspace
-        uxtb    w0, w1               // Zero-extend byte to w0
+        // if (isspace(ch)) goto whitespace;
+        adr     x0, iChar
+        ldr     w1, [x0]
+        mov     w0, w1
         bl      isspace
-        cmp     w0, #0               // Check if result is zero
-        beq     NotSpace
+        cmp     w0, FALSE
+        bne     whitespace
 
-        // Handle end of word (if iInWord == TRUE)
-        ldr     w2, [x20]            // Load iInWord
-        cmp     w2, #TRUE
-        beq     EndWord
+        // goto nonwhitespace;
+        b       nonwhitespace
+whitespace:
+        // if (inWord)
+        adr     x0, iInWord
+        ldr     w1, [x0]
+        cmp     w1, FALSE
+        beq     checknewline
 
-        b       CheckNewline
+        // wordCount++;
+        adr     x0, lWordCount
+        ldr     w1, [x0]
+        add     w1, w1, #1
+        str     w1, [x0]
 
-EndWord:
-        // Increment word count
-        ldr     x2, [x23]            // Load lWordCount
-        add     x2, x2, #1
-        str     x2, [x23]            // Store back
+        // inWord = FALSE;
+        adr     x0, iInWord
+        mov     w1, FALSE
+        str     w1, [x0]
 
-        // Set iInWord to FALSE
-        mov     w2, #FALSE
-        str     w2, [x20]
-        b       CheckNewline
+checknewline:
+        // if (ch == '\n') lineCount++;
+        adr     x0, iChar
+        ldr     w1, [x0]
+        cmp     w1, #10
+        bne     read
+        adr     x0, lLineCount
+        ldr     w1, [x0]
+        add     w1, w1, #1
+        str     w1, [x0]
+        b       read
 
-NotSpace:
-        // Check if not already in a word
-        ldr     w2, [x20]            // Load iInWord
-        cmp     w2, #FALSE
-        bne     CheckNewline
+nonwhitespace:
+        // if (!inWord) inWord = 1;
+        adr     x0, iInWord
+        ldr     w1, [x0]
+        cmp     w1, FALSE
+        bne     read
+        mov     w1, TRUE
+        str     w1, [x0]
+        b       read
 
-        // Set iInWord to TRUE
-        mov     w2, #TRUE
-        str     w2, [x20]
+endloop:
+        // if (inWord) wordCount++;
+        adr     x0, iInWord
+        ldr     w1, [x0]
+        cmp     w1, FALSE
+        beq     print
+        adr     x0, lWordCount
+        ldr     w1, [x0]
+        add     w1, w1, #1
+        str     w1, [x0]
 
-CheckNewline:
-        // Check for newline character
-        cmp     w1, #NEWLINE
-        bne     Loop_Start
-
-        // Increment line count
-        ldr     x2, [x22]            // Load lLineCount
-        add     x2, x2, #1
-        str     x2, [x22]
-
-        b       Loop_Start
-
-Loop_End:
-        // Check if still in a word at EOF
-        ldr     w2, [x20]            // Load iInWord
-        cmp     w2, #TRUE
-        beq     FinalWord
-
-        b       PrintResults
-
-FinalWord:
-        // Increment word count for the last word
-        ldr     x2, [x23]            // Load lWordCount
-        add     x2, x2, #1
-        str     x2, [x23]
-
-PrintResults:
-        // Prepare arguments for printf
-        adr     x0, fmt_string       // Format string
-        ldr     x1, [x22]            // lLineCount
-        ldr     x2, [x23]            // lWordCount
-        ldr     x3, [x21]            // lCharCount
+print:
+        // printf("%7ld %7ld %7ld\n", lLineCount, lWordCount, lCharCount);
+        adr     x0, printFormatStr
+        adr     x1, lLineCount
+        ldr     x1, [x1]
+        adr     x2, lWordCount
+        ldr     x2, [x2]
+        adr     x3, lCharCount
+        ldr     x3, [x3]
         bl      printf
 
-        // Return from main
-        mov     w0, #0
-
-        // Epilogue: Restore registers and stack
-        ldr     x23, [sp, #48]                  // Restore x23
-        ldp     x21, x22, [sp, #32]             // Restore x21 and x22
-        ldp     x19, x20, [sp, #16]             // Restore x19 and x20
-        ldp     x29, x30, [sp]                  // Restore x29 and x30
-        add     sp, sp, #STACK_FRAME_SIZE
+exit:
+        // return 0;
+        mov     w0, 0
+        ldr     x30, [sp]
+        add     sp, sp, MAIN_STACK_BYTECOUNT
         ret
