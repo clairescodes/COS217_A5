@@ -111,12 +111,12 @@ BigInt_add:
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         str     x30, [sp]
         str     x22, [sp, 8]
-        str     x23, [sp, ULSUM]
-        str     x24, [sp, LINDEX]
-        str     x25, [sp, LSUMLENGTH]
-        str     x26, [sp, OADDEND1]
-        str     x27, [sp, OADDEND2]
-        str     x28, [sp, OSUM]
+        str     x23, [sp, 16]
+        str     x24, [sp, 24]
+        str     x25, [sp, 32]
+        str     x26, [sp, 40]
+        str     x27, [sp, 48]
+        str     x28, [sp, 56]
 
         // Save parameters into callee-saved registers
         mov     oAddend1, x0
