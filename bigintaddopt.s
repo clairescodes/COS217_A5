@@ -133,92 +133,124 @@ BigInt_add:
 
         // Clear oSum memory if needed
         ldr     x0, [oSum]            // Load oSum->lLength
-        ldr     x0, [x0]
         cmp     x0, lSumLength
         ble     skip_clear
 
-        ldr     x0, [oSum]
+        mov     x0, oSum
         add     x0, x0, AULDIGITS
-        mov     x1, 0
-        mov     x2, AULDIGITS
-        mov     x3, MAX_DIGITS
+        mov     w1, 0
+        mov     x2, MAX_DIGITS
+        mov     x3, AULDIGITS
         mul     x2, x2, x3
         bl      memset
 
 skip_clear:
         // Initialize ulCarry and lIndex
-        mov     ulCarry, xzr
-        mov     lIndex, xzr
+        mov     x19, 0
+        mov     x21, 0
 
 loop_start:
         cmp     lIndex, lSumLength
         bge     check_carry_out       // Exit loop if lIndex >= lSumLength
 
-        // ulSum = ulCarry
+        // ulSum = ulCarry;
         mov     ulSum, ulCarry
 
-        // Add oAddend1->aulDigits[lIndex]
-        ldr     x0, [oAddend1]
-        add     x0, x0, AULDIGITS
-        add     x0, x0, lIndex, lsl #3 // Index into aulDigits
-        ldr     x1, [x0]
-        add     ulSum, ulSum, x1
+        //  ulCarry = 0;
+        mov     ulCarry, 0
 
-        // Update ulCarry if overflow occurred
-        cmp     ulSum, x1
-        cset    ulCarry, cc
+        // ulSum += oAddend1->aulDigits[lIndex];
+        mov     x0, ulSum 
+        mov     x1, oAddend1
+        add     x1, x1, 8
+        mov     x2, lIndex
+        ldr     x1, [x1, x2, lsl 3]
+        add     x0, x0, x1 
+        mov     ulSum, x0 
 
-        // Add oAddend2->aulDigits[lIndex]
-        ldr     x0, [oAddend2]
-        add     x0, x0, AULDIGITS
-        add     x0, x0, lIndex, lsl #3
-        ldr     x1, [x0]
-        add     ulSum, ulSum, x1
+        // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
+        cmp     x0, x1 
+        bhs     skip_carry_1 
+        mov     x19, 1
 
-        // Update ulCarry for oAddend2
-        cmp     ulSum, x1
-        cset    x2, cc
-        orr     ulCarry, ulCarry, x2
+skip_carry_1:
+        // ulSum += oAddend2->aulDigits[lIndex];
+        mov     x0, ulSum 
+        mov     x1, oAddend2
+        add     x1, x1, 8
+        mov     x2, lIndex
+        ldr     x1, [x1, x2, lsl 3]
+        add     x0, x0, x1 
+        mov     ulSum, x0 
 
-        // Write ulSum to oSum->aulDigits[lIndex]
-        ldr     x0, [oSum]
-        add     x0, x0, AULDIGITS
-        add     x0, x0, lIndex, lsl #3
-        str     ulSum, [x0]
+        // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
+        cmp     x0, x1 
+        bhs     skip_carry_2 
+        mov     ulCarry, 1
 
-        // Increment lIndex
-        add     lIndex, lIndex, #1
+skip_carry_2:
+        // oSum->aulDigits[lIndex] = ulSum;
+        mov     x0, ulSum 
+        mov     x1, oSum 
+        add     x1, x1, AULDIGITS
+        mov     x2, lIndex 
+        str     x0, [x1, x2, lsl 3]
+
+        // lIndex++; 
+        add     lIndex, lIndex, 1 
         b       loop_start
 
 check_carry_out:
-        // Handle final carry
-        cbz     ulCarry, set_length
+        // if (ulCarry == 1) goto end 
+        mov     x0, ulCarry 
+        cmp     x0, 1 
+        bne     end 
 
-        cmp     lSumLength, MAX_DIGITS
-        bge     overflow
+        // if (lSumLength == MAX_DIGITS) goto add_carry 
+        mov     x0, lSumLength
+        cmp     x0, MAX_DIGITS
+        bne     add_carry
 
-        // Add carry to oSum
-        ldr     x0, [oSum]
-        add     x0, x0, AULDIGITS
-        add     x0, x0, lSumLength, lsl #3
-        mov     x1, 1
-        str     x1, [x0]
-
-        // Increment lSumLength
-        add     lSumLength, lSumLength, #1
-
-set_length:
-        // Update oSum->lLength
-        ldr     x0, [oSum]
-        str     lSumLength, [x0]
-
-        // Return TRUE
-        mov     w0, TRUE
-        b       return_add
-
-overflow:
-        // Return FALSE
+        // return FALSE
         mov     w0, FALSE
+        ldr     x30, [sp]
+        ldr     x19, [sp, ulCarry]
+        ldr     x20, [sp, ulSum]
+        ldr     x21, [sp, lIndex]
+        ldr     x22, [sp, lSumLength]
+        ldr     x23, [sp, oAddend1]
+        ldr     x24, [sp, oAddend2]
+        ldr     x25, [sp, oSum]
+
+        add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
+        ret
+
+add_carry:
+        // oSum->aulDigits[lSumLength] = 1;
+        mov     x0, 1
+        mov     x1, oSum 
+        add     x1, x1, AULDIGITS 
+        mov     x2, lSumLength
+        str     x0, [x1, x2, lsl 3]
+
+        // lSumLength++ 
+        add     lSumLength, lSumLength, 1 
+
+set_length: 
+        // oSum->lLength = lSumLength; 
+        mov     x0, oSum 
+        mov     x1, lSumLength 
+        str     x1, [x0] 
+
+        // return TRUE;
+        mov     w0, TRUE
+        ldr     x19, [sp, ulCarry]
+        ldr     x20, [sp, ulSum]
+        ldr     x21, [sp, lIndex]
+        ldr     x22, [sp, lSumLength]
+        ldr     x23, [sp, oAddend1]
+        ldr     x24, [sp, oAddend2]
+        ldr     x25, [sp, oSum]
 
 return_add:
         // Epilog: Restore stack space
