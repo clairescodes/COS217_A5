@@ -110,13 +110,13 @@ BigInt_add:
         // Prolog 
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         str     x30, [sp]
-        str     x19, [sp, ULCARRY]
-        str     x20, [sp, ULSUM]
-        str     x21, [sp, LINDEX]
-        str     x22, [sp, LSUMLENGTH]
-        str     x23, [sp, OADDEND1]
-        str     x24, [sp, OADDEND2]
-        str     x25, [sp, OSUM]
+        str     x22, [sp, ULCARRY]
+        str     x23, [sp, ULSUM]
+        str     x24, [sp, LINDEX]
+        str     x25, [sp, LSUMLENGTH]
+        str     x26, [sp, OADDEND1]
+        str     x27, [sp, OADDEND2]
+        str     x28, [sp, OSUM]
 
         // Save parameters into callee-saved registers
         mov     oAddend1, x0
@@ -146,8 +146,8 @@ BigInt_add:
 
 skip_clear:
         // Initialize ulCarry and lIndex
-        mov     x19, 0
-        mov     x21, 0
+        mov     x22, 0
+        mov     x24, 0
 
 loop_start:
         cmp     lIndex, lSumLength
@@ -214,13 +214,13 @@ check_carry_out:
         // return FALSE
         mov     w0, FALSE
         ldr     x30, [sp]
-        ldr     x19, [sp, ULCARRY]
-        ldr     x20, [sp, ULSUM]
-        ldr     x21, [sp, LINDEX]
-        ldr     x22, [sp, LSUMLENGTH]
-        ldr     x23, [sp, OADDEND1]
-        ldr     x24, [sp, OADDEND2]
-        ldr     x25, [sp, OSUM]
+        ldr     x22, [sp, ULCARRY]
+        ldr     x23, [sp, ULSUM]
+        ldr     x24, [sp, LINDEX]
+        ldr     x25, [sp, LSUMLENGTH]
+        ldr     x26, [sp, OADDEND1]
+        ldr     x27, [sp, OADDEND2]
+        ldr     x28, [sp, OSUM]
 
         add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         ret
@@ -244,13 +244,13 @@ set_length:
 
         // return TRUE;
         mov     w0, TRUE
-        ldr     x19, [sp, ULCARRY]
-        ldr     x20, [sp, ULSUM]
-        ldr     x21, [sp, LINDEX]
-        ldr     x22, [sp, LSUMLENGTH]
-        ldr     x23, [sp, OADDEND1]
-        ldr     x24, [sp, OADDEND2]
-        ldr     x25, [sp, OSUM]
+        ldr     x22, [sp, ULCARRY]
+        ldr     x23, [sp, ULSUM]
+        ldr     x24, [sp, LINDEX]
+        ldr     x25, [sp, LSUMLENGTH]
+        ldr     x26, [sp, OADDEND1]
+        ldr     x27, [sp, OADDEND2]
+        ldr     x28, [sp, OSUM]
 
 return_add:
         // Epilog: Restore stack space
