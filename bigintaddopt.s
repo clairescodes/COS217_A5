@@ -89,18 +89,18 @@ return:
         .equ     LINDEX, 24
         .equ     LSUMLENGTH, 32  
 
-        ulCarry         .req x19
-        ulSum           .req x20
-        lIndex          .req x21 
-        lSumLength      .req x22
+        ulCarry         .req x22
+        ulSum           .req x23
+        lIndex          .req x24 
+        lSumLength      .req x25
 
         .equ     OADDEND1, 40 
         .equ     OADDEND2, 48
         .equ     OSUM, 56
 
-        oAddend1        .req x23
-        oAddend2        .req x24
-        oSum            .req x25
+        oAddend1        .req x26
+        oAddend2        .req x27
+        oSum            .req x28
 
         .equ     AULDIGITS, 8
         
