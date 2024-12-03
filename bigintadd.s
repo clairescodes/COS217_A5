@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------
 // bigintadd.s
-// Author: Claire Shin, Emily Qian 
+// Author: Claire Shin, Emily Qian
 //---------------------------------------------------------------------
 
         .section .rodata
@@ -18,16 +18,36 @@
         .section .text
 
 //---------------------------------------------------------------------
-// BigInt_larger: return the larger of lLength1 and lLength2
+// Constants and Offsets
 //---------------------------------------------------------------------
 
         .equ FALSE, 0
         .equ TRUE, 1
+        .equ MAX_DIGITS, 32768  
 
+        // Stack frame sizes
         .equ STACK_FRAME_SIZE_BIGINT_LARGER, 16
+        .equ STACK_FRAME_SIZE_BIGINT_ADD, 64
+
+        // Offsets for local variables and parameters
         .equ OFFSET_LARGER, 0
         .equ OFFSET_LENGTH1, 8
         .equ OFFSET_LENGTH2, 16
+        .equ OFFSET_ADDEND1, 8
+        .equ OFFSET_ADDEND2, 16
+        .equ OFFSET_SUM, 24
+        .equ OFFSET_CARRY, 32
+        .equ OFFSET_TEMP_SUM, 40
+        .equ OFFSET_INDEX, 48
+        .equ OFFSET_SUM_LENGTH, 56
+
+        // Heap struct offsets
+        .equ OFFSET_LENGTH, 0
+        .equ OFFSET_DIGITS, 8
+
+//---------------------------------------------------------------------
+// BigInt_larger: return the larger of lLength1 and lLength2
+//---------------------------------------------------------------------
 
         .global BigInt_larger
 
@@ -67,21 +87,8 @@ endif1:
         .size BigInt_larger, (. - BigInt_larger)
 
 //---------------------------------------------------------------------
-// BigInt_add
-// Assign the sum of oAddend1 and oAddend2 to oSum
+// BigInt_add: assign the sum of oAddend1 and oAddend2 to oSum
 //---------------------------------------------------------------------
-
-        .equ STACK_FRAME_SIZE_BIGINT_ADD, 64
-        .equ OFFSET_ADDEND1, 8
-        .equ OFFSET_ADDEND2, 16
-        .equ OFFSET_SUM, 24
-        .equ OFFSET_CARRY, 32
-        .equ OFFSET_TEMP_SUM, 40
-        .equ OFFSET_INDEX, 48
-        .equ OFFSET_SUM_LENGTH, 56
-
-        .equ OFFSET_LENGTH, 0
-        .equ OFFSET_DIGITS, 8
 
         .global BigInt_add
 
