@@ -15,6 +15,7 @@
 
         .equ     FALSE, 0
         .equ     TRUE, 1
+        .equ     MAX_DIGITS, 32768 
 
         // always multiple of 16 
         .equ     BIGINT_LARGER_STACK_BYTECOUNT, 32
@@ -23,7 +24,6 @@
         .equ     lLarger, 8 
         .equ     lLength1, 16
         .equ     lLength2, 24
-        .equ     MAX_DIGITS, 32768  
 
        //--------------------------------------------------------------
        // Return the larger of lLength1 and lLength2.
