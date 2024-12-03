@@ -17,10 +17,6 @@
 
         .section .text
 
-//---------------------------------------------------------------------
-// Constants and Offsets
-//---------------------------------------------------------------------
-
         .equ FALSE, 0
         .equ TRUE, 1
         .equ MAX_DIGITS, 32768  
@@ -45,10 +41,9 @@
         .equ OFFSET_LENGTH, 0
         .equ OFFSET_DIGITS, 8
 
-//---------------------------------------------------------------------
-// BigInt_larger: return the larger of lLength1 and lLength2
-//---------------------------------------------------------------------
-
+        //-------------------------------------------------------------
+        // Return the larger of lLength1 and lLength2.
+        //-------------------------------------------------------------
         .global BigInt_larger
 
 BigInt_larger:
@@ -86,10 +81,12 @@ endif1:
 
         .size BigInt_larger, (. - BigInt_larger)
 
-//---------------------------------------------------------------------
-// BigInt_add: assign the sum of oAddend1 and oAddend2 to oSum
-//---------------------------------------------------------------------
-
+        //-------------------------------------------------------------
+        // Assign the sum of oAddend1 and oAddend2 to oSum.  oSum 
+        // should be distinct from oAddend1 and oAddend2.  
+        // Return 0 (FALSE) if an overflow occurred, and 1 (TRUE) 
+        // otherwise.
+        //-------------------------------------------------------------
         .global BigInt_add
 
 BigInt_add:
