@@ -1,136 +1,199 @@
-/----------------------------------------------
+//---------------------------------------------------------------------
 // bigintadd.s
-// Author: Claire Shin
-//----------------------------------------------
-.equ FALSE, 0
-.equ TRUE, 1
-.equ EOF, -1
-//----------------------------------------------
-    .section .data
-//----------------------------------------------
-    .section .bss
-//-----------------------------------------------
-    .section .text
+// Author: Claire Shin, Emily Qian 
+//---------------------------------------------------------------------
 
-// Must be a multiple of 16
-        .equ    BIGINT_LARGER_STACK_BYTECOUNT, 32
-        
-        // Local variable stack offsets:
-        .equ    LLARGER, 8
- 
-        // Parameter stack offsets:
-        .equ    LLENGTH1,   16
-        .equ    LLENGTH2,    24
+        .section .rodata
 
-*--------------------------------------------------------------------*/
+//---------------------------------------------------------------------
 
-/* Return the larger of lLength1 and lLength2. */
+        .section .data
 
-// static long BigInt_larger(long lLength1, long lLength2)
+//---------------------------------------------------------------------
+
+        .section .bss
+
+//---------------------------------------------------------------------
+
+        .section .text
+
+//---------------------------------------------------------------------
+// BigInt_larger: return the larger of lLength1 and lLength2
+//---------------------------------------------------------------------
+
+        .equ FALSE, 0
+        .equ TRUE, 1
+
+        .equ STACK_FRAME_SIZE_BIGINT_LARGER, 16
+        .equ OFFSET_LARGER, 0
+        .equ OFFSET_LENGTH1, 8
+        .equ OFFSET_LENGTH2, 16
+
+        .global BigInt_larger
 
 BigInt_larger:
+        // Prolog
+        sub     sp, sp, STACK_FRAME_SIZE_BIGINT_LARGER
+        str     x30, [sp, 8]
 
-    //Prolog
-    sub sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
-    str x30, [sp]
-    str x0, [sp, LLENGTH1]
-    str x1, [sp, LLENGTH2]
+        // long lLarger;
+        // Store parameters on stack
+        str     x0, [sp, OFFSET_LENGTH1]
+        str     x1, [sp, OFFSET_LENGTH2]
 
-    // if (lLength1 < lLength2) goto else1;
-    ldr x1, [sp, LLENGTH1]
-    ldr x2, [sp, LLENGTH2]
-    cmp x1, x2
-    blt else1
+        // if (lLength1 > lLength2)
+        ldr     x0, [sp, OFFSET_LENGTH1]
+        ldr     x1, [sp, OFFSET_LENGTH2]
+        cmp     x0, x1
+        blt     else1
 
-    // lLarger = lLength1;
-    ldr x1, [sp, LLENGTH1]
-    str x1, [sp, LLARGER]
-    
-    // goto endif1;
-    b endif1
-    
-    // lLarger = lLength2;
+        // lLarger = lLength1;
+        str     x0, [sp, OFFSET_LARGER]
+        b       endif1
+
 else1:
-    ldr x1, [sp, LLENGTH2]
-    str x1, [sp, LLARGER]
+        // lLarger = lLength2;
+        str     x1, [sp, OFFSET_LARGER]
 
 endif1:
-    ldr x0, [sp, LLARGER]
-    ldr x30, [sp]
-    add sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
-    ret 
+        // return lLarger;
+        ldr     x0, [sp, OFFSET_LARGER]
 
-    .size   BigInt_larger, (. - BigInt_larger)
+        // Epilog
+        ldr     x30, [sp, 8]
+        add     sp, sp, STACK_FRAME_SIZE_BIGINT_LARGER
+        ret
 
-/*--------------------------------------------------------------------*/
+        .size BigInt_larger, (. - BigInt_larger)
 
-// stack local variables and parameters offsets
-.equ OADDEND1, 8
-.equ OADDEND2, 16
-.equ OSUM, 24
-.equ ULCARRY, 32
-.equ ULSUM, 40
-.equ LINDEX, 48
-.equ LSUMLENGTH, 56 
+//---------------------------------------------------------------------
+// BigInt_add
+// Assign the sum of oAddend1 and oAddend2 to oSum
+//---------------------------------------------------------------------
 
-// heap struct offsets 
-.equ lLength, 0
-.equ aulDigits, 8
+        .equ STACK_FRAME_SIZE_BIGINT_ADD, 64
+        .equ OFFSET_ADDEND1, 8
+        .equ OFFSET_ADDEND2, 16
+        .equ OFFSET_SUM, 24
+        .equ OFFSET_CARRY, 32
+        .equ OFFSET_TEMP_SUM, 40
+        .equ OFFSET_INDEX, 48
+        .equ OFFSET_SUM_LENGTH, 56
 
-// stack size
-.equ BIGINT_ADD_STACK_BYTECOUNT, 64
+        .equ OFFSET_LENGTH, 0
+        .equ OFFSET_DIGITS, 8
 
-/* Assign the sum of oAddend1 and oAddend2 to oSum.  oSum should be
-   distinct from oAddend1 and oAddend2.  Return 0 (FALSE) if an
-   overflow occurred, and 1 (TRUE) otherwise. */
-
-// int BigInt_add(BigInt_T oAddend1, BigInt_T oAddend2, BigInt_T oSum)
-
-.global BigInt_add
+        .global BigInt_add
 
 BigInt_add:
-    //Prolog
-    sub sp, sp, BIGINT_ADD_STACK_BYTECOUNT
-    str x30, [sp]
-    str x0, [sp, OADDEND1]
-    str x1, [sp, OADDEND2]
-    str x2, [sp, OSUM]
+        // Prolog
+        sub     sp, sp, STACK_FRAME_SIZE_BIGINT_ADD
+        str     x30, [sp, 8]
 
-    /* Determine the larger length. */
-    // lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength);
-    ldr x0, [sp, OADDEND1]
-    ldr x0, [x0]
-    ldr x1, [sp, OADDEND2]
-    ldr x1, [x1]
-    bl BigInt_larger
-    str x0, [sp, LSUMLENGTH]
+        // Save parameters to stack
+        str     x0, [sp, OFFSET_ADDEND1]
+        str     x1, [sp, OFFSET_ADDEND2]
+        str     x2, [sp, OFFSET_SUM]
 
-    /* Clear oSum's array if necessary. */
-    // if (oSum->lLength < lSumLength) goto endif2;
-        ldr x1, [sp, OSUM]
-        ldr x1, [x1]
-        cmp x1, x0
-        blt endif2;
-        ldr x1, [sp, OSUM]
-        ldr x1, [x1, aulDigits]
-        ldr x2, 0
-        ldr x3, MAX_DIGITS * sizeof(unsigned long)
-        bl memset        
-    endif2:
+        // lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength);
+        ldr     x0, [sp, OFFSET_ADDEND1]
+        ldr     x0, [x0, OFFSET_LENGTH]
+        ldr     x1, [sp, OFFSET_ADDEND2]
+        ldr     x1, [x1, OFFSET_LENGTH]
+        bl      BigInt_larger
+        str     x0, [sp, OFFSET_SUM_LENGTH]
 
-    /* Perform the addition. */
-    mov ULCARRY, 0
-    mov LINDEX, 0
-    loop1:
-        // if (lIndex > lSumLength) goto endloop1;
-    
+        // if (oSum->lLength > lSumLength)
+        ldr     x1, [sp, OFFSET_SUM]
+        ldr     x1, [x1, OFFSET_LENGTH]
+        ldr     x2, [sp, OFFSET_SUM_LENGTH]
+        cmp     x1, x2
+        bls     skip_clear
 
-    // index psuedo code
-    ldr x0, [sp, oAddend1] 
-    add x0, x0, aulDigits
-    ldr x1, [sp, lIndex]
-    ldr x2, [x0, x1, lsl 3]
+        // memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
+        ldr     x1, [sp, OFFSET_SUM]
+        add     x1, x1, OFFSET_DIGITS
+        mov     x2, 0
+        mov     x3, MAX_DIGITS * 8
+        bl      memset
 
+skip_clear:
+        // ulCarry = 0;
+        mov     x9, 0
 
-    
-    
+        // for (lIndex = 0; lIndex < lSumLength; lIndex++)
+        mov     x10, 0
+loop1:
+        ldr     x0, [sp, OFFSET_SUM_LENGTH]
+        cmp     x10, x0
+        bge     endloop1
+
+        // ulSum = ulCarry;
+        mov     x11, x9
+        mov     x9, 0
+
+        // ulSum += oAddend1->aulDigits[lIndex];
+        ldr     x0, [sp, OFFSET_ADDEND1]
+        ldr     x1, [x0, OFFSET_DIGITS]
+        ldr     x0, [sp, OFFSET_INDEX]
+        ldr     x2, [x1, x0, lsl 3]
+        adds    x11, x11, x2
+        bcs     carry1
+
+carry1:
+        // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
+        mov     x9, 1
+
+        // ulSum += oAddend2->aulDigits[lIndex];
+        ldr     x0, [sp, OFFSET_ADDEND2]
+        ldr     x1, [x0, OFFSET_DIGITS]
+        ldr     x2, [x1, x0, lsl 3]
+        adds    x11, x11, x2
+        bcs     carry2
+
+carry2:
+        // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
+        mov     x9, 1
+
+        // oSum->aulDigits[lIndex] = ulSum;
+        ldr     x0, [sp, OFFSET_SUM]
+        ldr     x1, [x0, OFFSET_DIGITS]
+        str     x11, [x1, x0, lsl 3]
+
+        // Increment lIndex
+        add     x10, x10, 1
+        b       loop1
+
+endloop1:
+        // if (ulCarry == 1)
+        cmp     x9, 1
+        bne     no_carry
+
+        // if (lSumLength == MAX_DIGITS) return FALSE;
+        ldr     x0, [sp, OFFSET_SUM_LENGTH]
+        cmp     x0, MAX_DIGITS
+        bge     overflow
+
+        // oSum->aulDigits[lSumLength] = 1;
+        ldr     x1, [sp, OFFSET_SUM]
+        ldr     x2, [x1, OFFSET_DIGITS]
+        str     x9, [x2, x0, lsl 3]
+
+        // lSumLength++;
+        add     x0, x0, 1
+        str     x0, [sp, OFFSET_SUM_LENGTH]
+
+overflow:
+        mov     x0, FALSE
+        b       exit
+
+no_carry:
+        mov     x0, TRUE
+
+exit:
+        // Epilog
+        ldr     x30, [sp, 8]
+        add     sp, sp, STACK_FRAME_SIZE_BIGINT_ADD
+        ret
+
+        .size BigInt_add, (. - BigInt_add)
