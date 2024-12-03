@@ -83,111 +83,102 @@ BigInt_add:
         sub     sp, sp, #64           // Allocate stack frame (multiple of 16)
         str     x30, [sp]             // Save link register
 
+        // Store parameters on the stack
+        str     x0, [sp, #8]          // oAddend1
+        str     x1, [sp, #16]         // oAddend2
+        str     x2, [sp, #24]         // oSum
+
         // Initialize ulCarry = 0 and lIndex = 0
-        adr     x0, ulCarry
-        mov     x1, 0
-        str     x1, [x0]              // ulCarry = 0
-        adr     x0, lIndex
-        str     x1, [x0]              // lIndex = 0
+        mov     x0, 0
+        str     x0, [sp, #32]         // ulCarry
+        str     x0, [sp, #40]         // lIndex
 
         // Compute lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength)
-        ldr     x0, [oAddend1, LLENGTH]  // Load oAddend1->lLength
-        ldr     x1, [oAddend2, LLENGTH]  // Load oAddend2->lLength
-        bl      BigInt_larger            // Call BigInt_larger
-        adr     x2, lSumLength
-        str     x0, [x2]                 // Store lSumLength
+        ldr     x0, [sp, #8]          // Load oAddend1
+        ldr     x0, [x0, #LLENGTH]    // Load oAddend1->lLength
+        ldr     x1, [sp, #16]         // Load oAddend2
+        ldr     x1, [x1, #LLENGTH]    // Load oAddend2->lLength
+        bl      BigInt_larger         // Call BigInt_larger
+        str     x0, [sp, #48]         // Store lSumLength
 
         // Clear oSum->aulDigits using memset
-        ldr     x0, [oSum]
-        add     x0, x0, AULDIGITS        // Address of oSum->aulDigits
-        mov     x1, 0                    // Zero value
-        mov     x2, MAX_DIGITS           // Count
+        ldr     x0, [sp, #24]         // Load oSum
+        add     x0, x0, #AULDIGITS    // Address of oSum->aulDigits
+        mov     x1, 0                 // Zero value
+        mov     x2, MAX_DIGITS        // Count
         bl      memset
 
 addition_loop:
         // Check if lIndex < lSumLength
-        adr     x0, lIndex
-        ldr     x0, [x0]              // Load lIndex
-        adr     x1, lSumLength
-        ldr     x1, [x1]              // Load lSumLength
+        ldr     x0, [sp, #40]         // Load lIndex
+        ldr     x1, [sp, #48]         // Load lSumLength
         cmp     x0, x1
         bge     end_addition_loop     // Break if lIndex >= lSumLength
 
         // ulSum = ulCarry
-        adr     x0, ulCarry
-        ldr     x1, [x0]              // Load ulCarry
-        adr     x2, ulSum
-        str     x1, [x2]              // Store ulSum = ulCarry
+        ldr     x0, [sp, #32]         // Load ulCarry
+        str     x0, [sp, #56]         // ulSum = ulCarry
 
         // Add oAddend1->aulDigits[lIndex] to ulSum
-        adr     x0, oAddend1
-        add     x0, x0, AULDIGITS     // Address of oAddend1->aulDigits
-        adr     x1, lIndex
-        ldr     x1, [x1]              // Load lIndex
-        ldr     x3, [x0, x1, lsl #3]  // Load oAddend1->aulDigits[lIndex]
-        adr     x4, ulSum
-        ldr     x4, [x4]              // Load ulSum
-        adds    x4, x4, x3            // Add oAddend1->aulDigits[lIndex]
-        str     x4, [adr, ulSum]      // Update ulSum
-        cset    x5, cs                // Carry flag
+        ldr     x0, [sp, #8]          // Load oAddend1
+        add     x0, x0, #AULDIGITS    // Address of oAddend1->aulDigits
+        ldr     x1, [sp, #40]         // Load lIndex
+        ldr     x2, [x0, x1, lsl #3]  // Load oAddend1->aulDigits[lIndex]
+        ldr     x3, [sp, #56]         // Load ulSum
+        adds    x3, x3, x2            // Add oAddend1->aulDigits[lIndex]
+        str     x3, [sp, #56]         // Update ulSum
+        cset    x4, cs                // Carry flag
 
         // Add oAddend2->aulDigits[lIndex] to ulSum
-        adr     x0, oAddend2
-        add     x0, x0, AULDIGITS     // Address of oAddend2->aulDigits
-        ldr     x6, [x0, x1, lsl #3]  // Load oAddend2->aulDigits[lIndex]
-        ldr     x4, [adr]             // ulSum
-        adds    x4, x4, x6            // Add oAddend2->aulDigits[lIndex] to ulSum
-        str     x4, [adr, ulSum]      // Store updated ulSum
-        cset    x7, cs                // Update carry flag
+        ldr     x0, [sp, #16]         // Load oAddend2
+        add     x0, x0, #AULDIGITS    // Address of oAddend2->aulDigits
+        ldr     x2, [x0, x1, lsl #3]  // Load oAddend2->aulDigits[lIndex]
+        ldr     x3, [sp, #56]         // Load ulSum
+        adds    x3, x3, x2            // Add oAddend2->aulDigits[lIndex]
+        str     x3, [sp, #56]         // Store updated ulSum
+        cset    x5, cs                // Update carry flag
 
         // Combine carry flags
-        orr     x5, x5, x7            // Combine previous and current carry
-        adr     x0, ulCarry
-        str     x5, [x0]              // Store updated ulCarry
+        orr     x4, x4, x5            // Combine previous and current carry
+        str     x4, [sp, #32]         // Store updated ulCarry
 
         // Store ulSum into oSum->aulDigits[lIndex]
-        adr     x0, oSum
-        add     x0, x0, AULDIGITS     // Address of oSum->aulDigits
-        adr     x1, lIndex
-        ldr     x1, [x1]              // Load lIndex
-        ldr     x4, [adr, ulSum]      // Load ulSum
-        str     x4, [x0, x1, lsl #3]  // Store ulSum in oSum->aulDigits[lIndex]
+        ldr     x0, [sp, #24]         // Load oSum
+        add     x0, x0, #AULDIGITS    // Address of oSum->aulDigits
+        ldr     x1, [sp, #40]         // Load lIndex
+        ldr     x3, [sp, #56]         // Load ulSum
+        str     x3, [x0, x1, lsl #3]  // Store ulSum in oSum->aulDigits[lIndex]
 
         // Increment lIndex
-        adr     x0, lIndex
-        ldr     x1, [x0]
-        add     x1, x1, 1
-        str     x1, [x0]              // lIndex++
+        ldr     x0, [sp, #40]
+        add     x0, x0, 1
+        str     x0, [sp, #40]         // lIndex++
 
         b       addition_loop         // Repeat loop
 
 end_addition_loop:
         // Check for final carry
-        adr     x0, ulCarry
-        ldr     x0, [x0]
+        ldr     x0, [sp, #32]         // Load ulCarry
         cbz     x0, set_sum_length    // If ulCarry == 0, skip to set_sum_length
 
         // Check if there's room for an additional digit
-        adr     x1, lSumLength
-        ldr     x1, [x1]
+        ldr     x1, [sp, #48]         // Load lSumLength
         cmp     x1, MAX_DIGITS
         bge     return_false          // If lSumLength == MAX_DIGITS, return FALSE
 
         // Add carry to oSum->aulDigits[lSumLength]
-        adr     x0, oSum
-        add     x0, x0, AULDIGITS     // Address of oSum->aulDigits
-        ldr     x1, [adr, lSumLength]
-        mov     x2, 1
-        str     x2, [x0, x1, lsl #3]  // Store 1 at oSum->aulDigits[lSumLength]
-        add     x1, x1, 1
-        str     x1, [adr, lSumLength] // Increment lSumLength
+        ldr     x0, [sp, #24]         // Load oSum
+        add     x0, x0, #AULDIGITS    // Address of oSum->aulDigits
+        ldr     x2, [sp, #48]         // Load lSumLength
+        str     xzr, [x0, x2, lsl #3] // Store 1 at oSum->aulDigits[lSumLength]
+        add     x2, x2, 1
+        str     x2, [sp, #48]         // Increment lSumLength
 
 set_sum_length:
         // Set oSum->lLength = lSumLength
-        adr     x0, oSum
-        adr     x1, lSumLength
-        ldr     x2, [x1]
-        str     x2, [x0, LLENGTH]     // oSum->lLength = lSumLength
+        ldr     x0, [sp, #24]         // Load oSum
+        ldr     x1, [sp, #48]         // Load lSumLength
+        str     x1, [x0, #LLENGTH]    // oSum->lLength = lSumLength
 
         mov     x0, TRUE              // Return TRUE
         b       end_BigInt_add
