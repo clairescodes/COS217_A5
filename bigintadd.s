@@ -1,189 +1,136 @@
-//---------------------------------------------------------------------
+/----------------------------------------------
 // bigintadd.s
-// Author: Claire Shin and Emily Qian
-// Description: Implementation of BigInt_larger and BigInt_add in ARMv8
-//---------------------------------------------------------------------
+// Author: Claire Shin
+//----------------------------------------------
+.equ FALSE, 0
+.equ TRUE, 1
+.equ EOF, -1
+//----------------------------------------------
+    .section .data
+//----------------------------------------------
+    .section .bss
+//-----------------------------------------------
+    .section .text
 
-        .section .rodata
+// Must be a multiple of 16
+        .equ    BIGINT_LARGER_STACK_BYTECOUNT, 32
+        
+        // Local variable stack offsets:
+        .equ    LLARGER, 8
+ 
+        // Parameter stack offsets:
+        .equ    LLENGTH1,   16
+        .equ    LLENGTH2,    24
 
-AULDIGITS:
-        .quad   8
+*--------------------------------------------------------------------*/
 
-MAX_DIGITS:
-        .quad   32768
+/* Return the larger of lLength1 and lLength2. */
 
-TRUE:
-        .quad   1
-
-FALSE:
-        .quad   0
-
-//---------------------------------------------------------------------
-// BSS Section: Variables for BigInt_larger and BigInt_add
-//---------------------------------------------------------------------
-        .section .bss
-
-lLength1:
-        .skip   8
-lLength2:
-        .skip   8
-lLarger:
-        .skip   8
-
-ulCarry:
-        .skip   8
-lSumLength:
-        .skip   8
-lIndex:
-        .skip   8
-ulSum:
-        .skip   8
-
-//---------------------------------------------------------------------
-// BigInt_larger
-//---------------------------------------------------------------------
-
-        .global BigInt_larger
+// static long BigInt_larger(long lLength1, long lLength2)
 
 BigInt_larger:
-        // Prolog
-        sub     sp, sp, 16
-        str     x30, [sp]
 
-        // Store parameters in bss
-        adr     x1, lLength1
-        str     x0, [x1]               // lLength1 = x0
-        adr     x1, lLength2
-        str     x1, [x1]               // lLength2 = x1
+    //Prolog
+    sub sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
+    str x30, [sp]
+    str x0, [sp, LLENGTH1]
+    str x1, [sp, LLENGTH2]
 
-        // Compare lLength1 and lLength2
-        adr     x0, lLength1
-        ldr     x0, [x0]
-        adr     x1, lLength2
-        ldr     x1, [x1]
-        cmp     x0, x1
-        adr     x2, lLarger
-        csel    x0, x0, x1, gt         // lLarger = max(lLength1, lLength2)
-        str     x0, [x2]
+    // if (lLength1 < lLength2) goto else1;
+    ldr x1, [sp, LLENGTH1]
+    ldr x2, [sp, LLENGTH2]
+    cmp x1, x2
+    blt else1
 
-        // Return lLarger
-        adr     x0, lLarger
-        ldr     x0, [x0]
+    // lLarger = lLength1;
+    ldr x1, [sp, LLENGTH1]
+    str x1, [sp, LLARGER]
+    
+    // goto endif1;
+    b endif1
+    
+    // lLarger = lLength2;
+else1:
+    ldr x1, [sp, LLENGTH2]
+    str x1, [sp, LLARGER]
 
-        // Epilog
-        ldr     x30, [sp]
-        add     sp, sp, 16
-        ret
+endif1:
+    ldr x0, [sp, LLARGER]
+    ldr x30, [sp]
+    add sp, sp, BIGINT_LARGER_STACK_BYTECOUNT
+    ret 
 
-        .size BigInt_larger, (. - BigInt_larger)
+    .size   BigInt_larger, (. - BigInt_larger)
 
-//---------------------------------------------------------------------
-// BigInt_add
-//---------------------------------------------------------------------
+/*--------------------------------------------------------------------*/
 
-        .global BigInt_add
+// stack local variables and parameters offsets
+.equ OADDEND1, 8
+.equ OADDEND2, 16
+.equ OSUM, 24
+.equ ULCARRY, 32
+.equ ULSUM, 40
+.equ LINDEX, 48
+.equ LSUMLENGTH, 56 
+
+// heap struct offsets 
+.equ lLength, 0
+.equ aulDigits, 8
+
+// stack size
+.equ BIGINT_ADD_STACK_BYTECOUNT, 64
+
+/* Assign the sum of oAddend1 and oAddend2 to oSum.  oSum should be
+   distinct from oAddend1 and oAddend2.  Return 0 (FALSE) if an
+   overflow occurred, and 1 (TRUE) otherwise. */
+
+// int BigInt_add(BigInt_T oAddend1, BigInt_T oAddend2, BigInt_T oSum)
+
+.global BigInt_add
 
 BigInt_add:
-        // Prolog
-        sub     sp, sp, 64             // Allocate stack frame (multiple of 16)
-        str     x30, [sp]              // Save link register
+    //Prolog
+    sub sp, sp, BIGINT_ADD_STACK_BYTECOUNT
+    str x30, [sp]
+    str x0, [sp, OADDEND1]
+    str x1, [sp, OADDEND2]
+    str x2, [sp, OSUM]
 
-        // Initialize ulCarry = 0 and lIndex = 0
-        adr     x0, ulCarry
-        mov     x1, xzr
-        str     x1, [x0]               // ulCarry = 0
-        adr     x0, lIndex
-        str     x1, [x0]               // lIndex = 0
+    /* Determine the larger length. */
+    // lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength);
+    ldr x0, [sp, OADDEND1]
+    ldr x0, [x0]
+    ldr x1, [sp, OADDEND2]
+    ldr x1, [x1]
+    bl BigInt_larger
+    str x0, [sp, LSUMLENGTH]
 
-        // Compute lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength)
-        adr     x1, AULDIGITS
-        ldr     x2, [x1]               // Load AULDIGITS value
-        ldr     x0, [x0, x2]           // Load oAddend1->lLength
-        ldr     x1, [x1, x2]           // Load oAddend2->lLength
-        bl      BigInt_larger          // Call BigInt_larger
-        adr     x2, lSumLength
-        str     x0, [x2]               // Store lSumLength
+    /* Clear oSum's array if necessary. */
+    // if (oSum->lLength < lSumLength) goto endif2;
+        ldr x1, [sp, OSUM]
+        ldr x1, [x1]
+        cmp x1, x0
+        blt endif2;
+        ldr x1, [sp, OSUM]
+        ldr x1, [x1, aulDigits]
+        ldr x2, 0
+        ldr x3, MAX_DIGITS * sizeof(unsigned long)
+        bl memset        
+    endif2:
 
-        // Clear oSum->aulDigits using memset
-        adr     x0, MAX_DIGITS
-        ldr     x1, [x0]               // Load MAX_DIGITS value
-        adr     x2, AULDIGITS
-        ldr     x3, [x2]               // Load AULDIGITS value
-        bl      memset
+    /* Perform the addition. */
+    mov ULCARRY, 0
+    mov LINDEX, 0
+    loop1:
+        // if (lIndex > lSumLength) goto endloop1;
+    
 
-addition_loop:
-        // Check if lIndex < lSumLength
-        adr     x0, lIndex
-        ldr     x0, [x0]               // Load lIndex
-        adr     x1, lSumLength
-        ldr     x1, [x1]               // Load lSumLength
-        cmp     x0, x1
-        bge     end_addition_loop      // Break if lIndex >= lSumLength
+    // index psuedo code
+    ldr x0, [sp, oAddend1] 
+    add x0, x0, aulDigits
+    ldr x1, [sp, lIndex]
+    ldr x2, [x0, x1, lsl 3]
 
-        // ulSum = ulCarry
-        adr     x0, ulCarry
-        ldr     x1, [x0]               // Load ulCarry
-        adr     x2, ulSum
-        str     x1, [x2]               // Store ulSum = ulCarry
 
-        // Add oAddend1->aulDigits[lIndex] to ulSum
-        adr     x1, AULDIGITS
-        ldr     x2, [x1]               // Load AULDIGITS value
-        lsl     x3, x0, x2             // lIndex * AULDIGITS
-        add     x4, x3, x0             // Address of oAddend1->aulDigits[lIndex]
-        ldr     x5, [x4]
-        adds    x5, x5, x1             // Add value
-        str     x5, [x1]
-
-end_addition_loop:
-        ldr     x7, x1
-        // Check for final carry
-        adr     x0, ulCarry
-        ldr     x0, [x0]
-        cbz     x0, set_sum_length    // If ulCarry == 0, skip to set_sum_length
-
-        // Check if there's room for an additional digit
-        adr     x1, lSumLength
-        ldr     x1, [x1]
-        adr     x2, MAX_DIGITS
-        ldr     x2, [x2]
-        cmp     x1, x2
-        bge     return_false          // If lSumLength == MAX_DIGITS, return FALSE
-
-        // Add carry to oSum->aulDigits[lSumLength]
-        adr     x3, AULDIGITS
-        ldr     x4, [x3]              // Load AULDIGITS value
-        adr     x0, oSum
-        add     x0, x0, x4            // Address of oSum->aulDigits
-        lsl     x1, x1, x4            // lSumLength * AULDIGITS
-        add     x0, x0, x1
-        mov     x2, 1
-        str     x2, [x0]              // Store carry
-        adr     x1, lSumLength
-        ldr     x2, [x1]
-        add     x2, x2, 1
-        str     x2, [x1]              // Increment lSumLength
-
-set_sum_length:
-        // Set oSum->lLength = lSumLength
-        adr     x0, oSum
-        adr     x1, lSumLength
-        ldr     x2, [x1]
-        adr     x3, AULDIGITS
-        ldr     x4, [x3]
-        add     x0, x0, x4            // Address of oSum->lLength
-        str     x2, [x0]
-
-        mov     x0, xzr               // Return TRUE
-        b       end_BigInt_add
-
-return_false:
-        mov     x0, xzr               // Return FALSE
-
-end_BigInt_add:
-        // Epilog
-        ldr     x30, [sp]
-        add     sp, sp, 64            // Restore stack frame
-        ret
-
-        .size BigInt_add, (. - BigInt_add)
+    
+    
