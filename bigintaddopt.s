@@ -84,19 +84,19 @@ return:
         .equ     BIGINT_ADD_STACK_BYTECOUNT, 64
        
        // local variables and parameter offsets 
-        .equ     ulCarry, 8
-        .equ     ulSum, 16
-        .equ     lIndex, 24
-        .equ     lSumLength, 32  
+        .equ     ULCARRY, 8
+        .equ     ULSUM, 16
+        .equ     LINDEX, 24
+        .equ     LSUMLENGTH, 32  
 
         ulCarry         .req x19
         ulSum           .req x20
         lIndex          .req x21 
         lSumLength      .req x22
 
-        .equ     oAddend1, 40 
-        .equ     oAddend2, 48
-        .equ     oSum, 56
+        .equ     OADDEND1, 40 
+        .equ     OADDEND2, 48
+        .equ     OSUM, 56
 
         oAddend1        .req x23
         oAddend2        .req x24
@@ -110,13 +110,13 @@ BigInt_add:
         // Prolog 
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         str     x30, [sp]
-        str     x19, [sp, ulCarry]
-        str     x20, [sp, ulSum]
-        str     x21, [sp, lIndex]
-        str     x22, [sp, lSumLength]
-        str     x23, [sp, oAddend1]
-        str     x24, [sp, oAddend2]
-        str     x25, [sp, oSum]
+        str     x19, [sp, ULCARRY]
+        str     x20, [sp, ULSUM]
+        str     x21, [sp, LINDEX]
+        str     x22, [sp, LSUMLENGTH]
+        str     x23, [sp, OADDEND1]
+        str     x24, [sp, OADDEND2]
+        str     x25, [sp, OSUM]
 
         // Save parameters into callee-saved registers
         mov     oAddend1, x0
@@ -214,13 +214,13 @@ check_carry_out:
         // return FALSE
         mov     w0, FALSE
         ldr     x30, [sp]
-        ldr     x19, [sp, ulCarry]
-        ldr     x20, [sp, ulSum]
-        ldr     x21, [sp, lIndex]
-        ldr     x22, [sp, lSumLength]
-        ldr     x23, [sp, oAddend1]
-        ldr     x24, [sp, oAddend2]
-        ldr     x25, [sp, oSum]
+        ldr     x19, [sp, ULCARRY]
+        ldr     x20, [sp, ULSUM]
+        ldr     x21, [sp, LINDEX]
+        ldr     x22, [sp, LSUMLENGTH]
+        ldr     x23, [sp, OADDEND1]
+        ldr     x24, [sp, OADDEND2]
+        ldr     x25, [sp, OSUM]
 
         add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         ret
@@ -244,13 +244,13 @@ set_length:
 
         // return TRUE;
         mov     w0, TRUE
-        ldr     x19, [sp, ulCarry]
-        ldr     x20, [sp, ulSum]
-        ldr     x21, [sp, lIndex]
-        ldr     x22, [sp, lSumLength]
-        ldr     x23, [sp, oAddend1]
-        ldr     x24, [sp, oAddend2]
-        ldr     x25, [sp, oSum]
+        ldr     x19, [sp, ULCARRY]
+        ldr     x20, [sp, ULSUM]
+        ldr     x21, [sp, LINDEX]
+        ldr     x22, [sp, LSUMLENGTH]
+        ldr     x23, [sp, OADDEND1]
+        ldr     x24, [sp, OADDEND2]
+        ldr     x25, [sp, OSUM]
 
 return_add:
         // Epilog: Restore stack space
@@ -258,4 +258,4 @@ return_add:
         ret
 
         .size   BigInt_larger, (. - BigInt_larger)
-        
+
