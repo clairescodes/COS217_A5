@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
+/* Modify randomtext.c to accept command-line arguments? */
+/* specify number of characters and lines? */ 
+
 int main(void) {
     const int MAX_CHARACTERS = 50000;
     const int MAX_LINES = 1000; 

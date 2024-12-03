@@ -98,6 +98,21 @@ particular, what bugs are in your submission?
 ------------------------------------------------------------------------
 What is your mywc program test plan?
 
+1. Boundary Testing: A testing technique using input values at, 
+just below, and just above, the defined limits of an
+input domain; and with input values causing outputs to be at, 
+just below, and just above, the defined limits of an output domain
+- possible boundary conditions and expected outputs (line word character)
+mywcEmpty.txt: empty file, 0 0 0 
+mywcOneChar.txt: one character, 0 1 1 
+mywcOneWord.txt: one word, 0 
+mywcOneWhite.txt: one whitespace, 0 0 1
+
+2. 
+
+Fuzz Testing 
+
+Other testing methods such as regression testing, bug driven testing, 
 
 
 ------------------------------------------------------------------------
