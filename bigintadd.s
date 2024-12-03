@@ -15,7 +15,7 @@
 
         .equ     FALSE, 0
         .equ     TRUE, 1
-        .equ     MAX_DIGITS, 32768 
+        .equ     MAX_DIGITS, 32768  
 
         // always multiple of 16 
         .equ     BIGINT_LARGER_STACK_BYTECOUNT, 32
