@@ -15,8 +15,12 @@ information given in the "Policies" web page (also available on armlab
 in the file ~cos217/AuthorizedSourcesList ) to this section of the
 readme file, and edit it as appropriate.
 
-
-
+•	The course's lectures.
+•	The course's precepts.
+•	The course's website.
+•	Documents that are referenced directly by the course's website. 
+Such documents include the course's lecture slides and precept handouts.
+•	The course's textbooks and reference manuals.
 ------------------------------------------------------------------------
 Student 2: What authorized sources of information did you use to
 complete the assignment? COPY THE LIST of authorized sources of
@@ -24,8 +28,14 @@ information given in the "Policies" web page (also available on armlab
 in the file ~cos217/AuthorizedSourcesList ) to this section of the
 readme file, and edit it as appropriate.
 
-
-
+•	The course's lectures.
+•	The course's precepts.
+•	The course's website.
+•	Documents that are referenced directly by the course's website. 
+Such documents include the course's lecture slides and precept handouts.
+•	office hours - Moretti
+•	lab ta - Spencer, Ella, Sofia
+•	The course's textbooks and reference manuals.
 ------------------------------------------------------------------------
 Student 1: What unauthorized sources of information did you use to
 complete the assignment? List any unauthorized sources of information
@@ -74,13 +84,12 @@ Claire Shin
 Student 1: What is your assessment of the assignment? Was it helpful?
 Was it fun?
 
-
-
+It was helpful to learn and practice writing assembly language. 
 ------------------------------------------------------------------------
 Student 2: What is your assessment of the assignment? Was it helpful?
 Was it fun?
 
-It was tedious 
+It was helpful thorroughly practicing assembly 
 ------------------------------------------------------------------------
 (optional) What information can you provide about your submission that
 will help your grader to grade it in the most favorable light? In
@@ -103,48 +112,100 @@ just below, and just above, the defined limits of an output domain.
 Binary data sets,  Randomly generated data sets)
 - tests and expected outputs (line word character) - 
 mywcBEmpty.txt: This file has zero characters. 
-This thus tests program behavior with no input.
-mywc.c - 
-mywc.s - 
+This thus tests program behavior with no input, 
+and so causes the computer to execute lines 28, 30, 55, 56 of the 
+given mywc.c and lines 1-43, 45-54, 113-122, 124-133, 135-140 of the
+mywc.s file. 
 0       0       0
-mywcBOneChar.txt: This file contains one character without newlines.
-Thus it tests boundary minimal input. 
-mywc.c - 12-16, 18, 26-30, 36-37, 39-40
+
+mywcBOneChar.txt: This file contains one character without newlines. 
+This thus tests boundary minimal input, and so causes the computer to 
+execute lines 28, 31, 39-40, 30, 55, 56 of the given mywc.c and 
+lines 1-43, 45-54, 89-96, 113-122, 124-133, 135-140 of the mywc.s file.
 0       1       1
-mywcBOneWhite.txt: This file contains one whitespace. 
-Thus it tests word counting logic on whitespace. 
-mywc.c - 12-16, 18-25, 36-37, 39-40.
-0       0       0
-mywcBNoNewLine.txt: This file contains words with no newline character
-Thus it tests if word counting works without newline terminating the
-file. 
+
+mywcBOneWhite.txt: This file contains one whitespace.
+This thus tests word counting logic on whitespace, and so causes the 
+computer to execute lines 28, 31, 32-34, 30, 55, 56 of the
+given mywc.c and lines 1-43, 45-54, 62-74, 113-122, 124-133, 135-140 
+of the mywc.s file.
+0       0       1
+
+mywcBNoNewLine.txt: This file contains words with no newline character.
+This thus tests if word counting works without newline terminating 
+the file, and so causes the computer to execute lines 28, 31, 39-40,
+30, 55, 56 of the given mywc.c and lines 1-43, 45-54, 89-96, 113-122,
+124-133, 135-140 of the mywc.s file.
 0       3      13
-mywcBSpecialCharacters.txt: This file contains word with special
-characters like tabs and newlines. 
+
+mywcBSpecialCharacters.txt: This file contains words with special 
+characters like tabs and newlines. This thus tests program behavior with
+mixed input, and so causes the computer to execute lines 28, 31, 32-34,
+39-40, 30, 55, 56 of the given mywc.c and lines 1-43, 45-54, 62-74, 
+89-96, 113-122, 124-133, 135-140 of the mywc.s file.
 0       1      17
+
 
 2. Statement Testing: Testing to satisfy the criterion that each 
 statement in a program be executed at least once during
 program testing.
 - tests and expected outputs (line word character) - 
-mywcStatement1.txt: This file contains a statement that 
-ends in a newline. 
+mywcStatement1.txt: This file contains a statement that ends in a
+newline.This thus tests program behavior for a standard sentence with
+proper termination, and so causes the computer to execute lines 28, 31,
+32-34, 39-40, 36-37, 30, 55, 56 of the given mywc.c and lines 1-43,
+45-54, 62-74, 89-96, 97-109, 113-122, 124-133, 135-140 of the
+mywc.s file.
 1       3      13
-mywcStatement2.txt: This file contains a statement that 
-ends in a newline. 
+
+mywcStatement2.txt: This file contains a statement that ends in a
+newline. This thus tests program behavior for a standard sentence with
+proper termination, and so causes the computer to execute lines 28, 31,
+32-34, 39-40, 36-37, 30, 55, 56 of the given mywc.c and lines 1-43,
+45-54, 62-74, 89-96, 97-109, 113-122, 124-133, 135-140 of the
+mywc.s file.
 1       1      15
-mywcSPunctuations.txt: This file contains a statement that 
-contains punctuations and ends in a newline. 
+
+mywcSPunctuations.txt:
+This file contains a statement that contains punctuations and ends
+in a newline. This thus tests program behavior with mixed input containing
+punctuation, and so causes the computer to execute lines 28, 31, 32-34, 
+39-40, 36-37, 30, 55, 56 of the given mywc.c and lines 1-43, 45-54, 
+62-74, 89-96, 97-109, 113-122, 124-133, 135-140 of the
+mywc.s file.
 1       3      20
+
 
 3. Stress Testing
 - tests and expected outputs (line word character) - 
-mywcSReallyLongWord.txt: This file contains a long word of max size
-without whitespaces nor newlines. 
-mywcSRanadomInput.txt: This file contains random ASCII characters
-including spaces, newlines, punctuation. 
-mywcSTooMuchWhiteSpace.txt: 
-mywcSTooMuchNewLine.txt: 
+mywcSReallyLongWord.txt: This file contains a long word of maximum
+size without whitespaces or newlines. This thus tests program behavior 
+for handling a single long word,
+and so causes the computer to execute lines 28, 31, 39-40, 30, 
+55, 56 of the given mywc.c and lines 1-43, 45-54, 89-96, 113-122,
+124-133, 135-140 of the mywc.s file. 
+
+mywcSRanadomInput.txt: This file contains random ASCII characters,
+including spaces, newlines, and punctuation.
+This thus tests program behavior with arbitrary inputs,
+and so causes the computer to execute lines 28, 31, 32-34, 39-40, 
+36-37, 30, 55, 56 of the given mywc.c and 
+lines 1-43, 45-54, 62-74, 89-96, 97-109, 113-122, 124-133, 135-140 
+of the mywc.s file.
+
+mywcSTooMuchWhiteSpace.txt: This file contains excessive 
+whitespace characters without newlines.
+This thus tests program behavior with large amounts of whitespace,
+and so causes the computer to execute lines 28, 31, 32-34, 30, 55, 
+56 of the given mywc.c and lines 1-43, 45-54, 62-74, 113-122,
+124-133, 135-140 of the mywc.s file.
+
+mywcSTooMuchNewLine.txt: This file contains excessive newline
+characters without other input. This thus tests program behavior with 
+a large number of line breaks, and so causes the computer to execute
+lines 28, 31, 32-34, 36-37, 30, 55, 56 of the
+given mywc.c and lines 1-43, 45-54, 62-74, 97-109, 113-122, 124-133, 
+135-140 of the mywc.s file.
 
 
 
@@ -156,11 +217,11 @@ Part 2a:  11.948688 seconds
 
 Part 2b:  2.630856 seconds
 
-Part 2d:  
+Part 2d:  8.945101 seconds
 
-Part 2e:  3.463626 seconds
+Part 2e:  3.442345 seconds
 
-Part 2f:  _____ seconds
+Part 2f:  2.026742 seconds
 
 
 
