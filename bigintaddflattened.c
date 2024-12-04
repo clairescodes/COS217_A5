@@ -10,18 +10,15 @@ long BigInt_larger(long lLength1, long lLength2)
     long lLarger;
 
     // Prolog: Initialize stack variables 
-    if (lLength1 > lLength2)
-        goto larger_set_length1;
-    goto larger_set_length2;
-
-larger_set_length1:
+    if (lLength1 <= lLength2)
+        goto else_section;
     lLarger = lLength1;
-    goto larger_return;
+    goto return_section;
 
-larger_set_length2:
+else_section:
     lLarger = lLength2;
 
-larger_return:
+return_section:
     return lLarger;
 
     // Epilog: Restore stack 
@@ -39,17 +36,14 @@ int BigInt_add(BigInt_T oAddend1, BigInt_T oAddend2, BigInt_T oSum)
     // Prolog: Initialize stack variables
     if (oAddend1 == NULL || oAddend2 == NULL || oSum == NULL || 
         oSum == oAddend1 || oSum == oAddend2)
-        goto return_false;
+        return 0; 
 
     // Call BigInt_larger
     lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength);
 
     // Clear oSum's array if necessary
-    if (oSum->lLength > lSumLength)
-        goto clear_sum_array;
-    goto skip_clear;
-
-clear_sum_array:
+    if (oSum->lLength <= lSumLength)
+        goto skip_clear;
     memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
 
 skip_clear:
@@ -67,40 +61,45 @@ loop_start:
     // Add oAddend1 digit
     ulSum += oAddend1->aulDigits[lIndex];
     if (ulSum < oAddend1->aulDigits[lIndex])
-        ulCarry = 1;
+        goto skip_carry_1;
+    ulCarry = 1;
 
+skip_carry_1: 
     // Add oAddend2 digit
     ulSum += oAddend2->aulDigits[lIndex];
     if (ulSum < oAddend2->aulDigits[lIndex])
-        ulCarry = 1;
+        goto skip_carry_2;
+    ulCarry = 1;
 
+skip_carry_2: 
     // Store result in oSum
     oSum->aulDigits[lIndex] = ulSum;
 
     // Increment index
     lIndex++;
-    if (lIndex < lSumLength) goto loop_start;
+    goto loop_start;
 
 check_carry_out:
-    if (ulCarry == 1)
-    {
-        if (lSumLength == MAX_DIGITS)
-            goto return_false;
+    if (ulCarry != 1) goto set_length;
+    if (lSumLength != MAX_DIGITS) goto add_carry;    
+    return 0; 
 
-        oSum->aulDigits[lSumLength] = 1;
-        lSumLength++;
-    }
+add_carry: 
+    // Add carry to oSum
+    oSum->aulDigits[lSumLength] = 1;
+    lSumLength++;
+    goto set_length;
 
 set_length:
     // Set length of the sum
     oSum->lLength = lSumLength;
-    goto return_true;
+    return 1; 
 
-return_false:
-    return 0; // FALSE
+clear_sum_array:
+    // Clear oSum's array
+    memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
+    goto skip_clear;
 
-return_true:
-    return 1; // TRUE
+}
 
     // Epilog: Restore stack variables
-}

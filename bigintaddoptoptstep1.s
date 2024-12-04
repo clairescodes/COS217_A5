@@ -72,7 +72,7 @@ BigInt_add:
         ldr     x1, [oAddend2, 0]      // Load lLength2
         cmp     x0, x1                 // Compare lengths
         mov     lSumLength, x0
-        ble     larger_done
+        blt     larger_done // fixed
         mov     lSumLength, x1
 
 larger_done:
