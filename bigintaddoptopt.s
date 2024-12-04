@@ -26,7 +26,7 @@
        // BigInt_T oSum)
        //--------------------------------------------------------------
        
-        .equ     BIGINT_ADD_STACK_BYTECOUNT, 64
+        .equ     BIGINT_ADD_STACK_BYTECOUNT, 32
        
        // local variables and parameter offsets 
         .equ     ULCARRY_OFFSET, 8
