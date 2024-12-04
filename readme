@@ -201,7 +201,7 @@ This thus tests program behavior with large amounts of whitespace,
 and so causes the computer to execute lines 28, 31, 32-34, 30, 55, 
 56 of the given mywc.c and lines 1-43, 45-54, 62-74, 113-122,
 124-133, 135-140 of the mywc.s file.
-
+0       0   50000
 
 mywcSTooMuchNewLine.txt: This file contains excessive newline
 characters without other input. This thus tests program behavior with 
