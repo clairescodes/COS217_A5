@@ -124,10 +124,8 @@ BigInt_add:
         mov     oSum, x2
 
         // lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength)
-        mov     x0, oAddend1        // Load oAddend1->lLength
-        ldr     x0, [x0]
-        mov     x1, oAddend2        // Load oAddend2->lLength
-        ldr     x1, [x1]
+        ldr     x0, [oAddend1]
+        ldr     x1, [oAddend2]
         bl      BigInt_larger
         mov     lSumLength, x0
 
