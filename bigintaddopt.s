@@ -25,6 +25,7 @@
         .equ     LLENGTH1_OFFSET, 16
         .equ     LLENGTH2_OFFSET, 24
 
+        // register alias for optimization 
         lLarger .req x19 
         lLength1 .req x20 
         lLength2 .req x21 
@@ -91,14 +92,15 @@ return_section:
         .equ     LINDEX_OFFSET, 24
         .equ     LSUMLENGTH_OFFSET, 32  
 
+        .equ     OADDEND1_OFFSET, 40 
+        .equ     OADDEND2_OFFSET, 48
+        .equ     OSUM_OFFSET, 56
+
+        // register alias for optimization 
         ulCarry         .req x19
         ulSum           .req x20
         lIndex          .req x21 
         lSumLength      .req x22
-
-        .equ     OADDEND1_OFFSET, 40 
-        .equ     OADDEND2_OFFSET, 48
-        .equ     OSUM_OFFSET, 56
 
         oAddend1        .req x23
         oAddend2        .req x24
@@ -133,12 +135,11 @@ BigInt_add:
 
         // clear oSum memory if necessary  
         // if (oSum->lLength <= lSumLength) goto skip_clear;
-        ldr     x0, [oSum, 0]            // Load oSum->lLength
+        ldr     x0, [oSum, 0] 
         cmp     x0, lSumLength
         ble     skip_clear
 
         // memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
-        // goto skip_clear;
         mov     x0, oSum
         add     x0, x0, AULDIGITS
         mov     w1, 0
