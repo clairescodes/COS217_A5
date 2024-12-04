@@ -50,7 +50,6 @@
         .equ     AULDIGITS, 8
         
         .global BigInt_add
-
 BigInt_add:
         // Prolog 
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
@@ -63,21 +62,21 @@ BigInt_add:
         str     x24, [sp, OADDEND2_OFFSET]
         str     x25, [sp, OSUM_OFFSET]
 
-        // save parameters to callee saved registers
+        // Save parameters to callee saved registers
         mov     oAddend1, x0
         mov     oAddend2, x1
         mov     oSum, x2
 
-        // OPTIMIZATION 2F_2: inline the call to BigInt_larger 
-        ldr     x0, [oAddend1, 0]
-        ldr     x1, [oAddend2, 0]
-        cmp     x0, x1 
+        // Inline BigInt_larger
+        ldr     x0, [oAddend1, 0]      // Load lLength1
+        ldr     x1, [oAddend2, 0]      // Load lLength2
+        cmp     x0, x1                 // Compare lengths
         mov     lSumLength, x0
-        ble     use
-        mov     lSumLength, x1 
+        ble     larger_done
+        mov     lSumLength, x1
 
-use: 
-        // clear oSum memory if necessary  
+larger_done:
+        // Clear oSum memory if necessary  
         ldr     x0, [oSum, 0]            // Load oSum->lLength
         cmp     x0, lSumLength
         ble     skip_clear
@@ -94,64 +93,66 @@ skip_clear:
         mov     ulCarry, 0
         mov     lIndex, 0
 
-        // OPTIMIZATION 2F_1: guarded loop pattern
+loop_start:
         cmp     lIndex, lSumLength
-        bge     check_carry_out  // Exit if lIndex >= lSumLength
+        bge     check_carry_out       // Exit loop if lIndex >= lSumLength
 
-loop_start: 
-        // OPTIMIZATION 2F_3: use adcs, 
-        //eliminate ifs for carry checking
-    
         // ulSum = ulCarry;
+        mov     ulSum, ulCarry
+
         // ulCarry = 0;
+        mov     ulCarry, 0
+
         // ulSum += oAddend1->aulDigits[lIndex];
         add     x0, oAddend1, AULDIGITS
         ldr     x1, [x0, lIndex, lsl 3]
-        add     ulSum, ulCarry, x1 
+        add     ulSum, ulSum, x1 
 
+        // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
+        cmp     ulSum, x1
+        bhs     skip_carry_1
+        mov     ulCarry, 1
+
+skip_carry_1:
         // ulSum += oAddend2->aulDigits[lIndex];
         add     x0, oAddend2, AULDIGITS
         ldr     x1, [x0, lIndex, lsl 3]
-        adcs    ulSum, ulSum, x1 
+        add     ulSum, ulSum, x1 
 
+        // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
+        cmp     ulSum, x1
+        bhs     skip_carry_2
+        mov     ulCarry, 1
+
+skip_carry_2:
         // oSum->aulDigits[lIndex] = ulSum;
         add     x0, oSum, AULDIGITS
         str     ulSum, [x0, lIndex, lsl 3]
 
-        // lIndex++; 
-        add     lIndex, lIndex, 1 
+        // lIndex++;
+        add     lIndex, lIndex, 1
 
-        // if (lIndex < lSumLength) goto loop_start;
         b       loop_start
 
 check_carry_out:
-        // if (ulCarry == 1) goto add_carry 
-        cmp     ulCarry, 1 
-        bne     set_length 
+        cmp     ulCarry, 1
+        bne     set_length
 
-        // if (lSumLength == MAX_DIGITS) return FALSE
         cmp     lSumLength, MAX_DIGITS
         bne     add_carry
 
-        // return FALSE
         mov     w0, FALSE
-        b       return 
+        b       return
 
 add_carry:
-        // oSum->aulDigits[lSumLength] = 1;
-        add     x0, oSum, AULDIGITS 
+        add     x0, oSum, AULDIGITS
         mov     x1, 1
         str     x1, [x0, lSumLength, lsl 3]
+        add     lSumLength, lSumLength, 1
 
-        // lSumLength++ 
-        add     lSumLength, lSumLength, 1 
-
-set_length: 
-        // oSum->lLength = lSumLength; 
-        str     lSumLength, [oSum, 0] 
-
-        // return TRUE;
-        mov     w0, TRUE 
+set_length:
+        str     lSumLength, [oSum, 0]
+        mov     w0, TRUE
 
 return:
         // Epilog: Restore stack space
@@ -163,8 +164,5 @@ return:
         ldr     x23, [sp, OADDEND1_OFFSET]
         ldr     x24, [sp, OADDEND2_OFFSET]
         ldr     x25, [sp, OSUM_OFFSET]
-
         add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
-        ret 
-
-        .size   BigInt_add, (. - BigInt_add)
+        ret
