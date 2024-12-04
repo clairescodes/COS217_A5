@@ -124,13 +124,13 @@ mywcReallyBigFile.txt:
 mywcTooMuchWhiteSpace.txt: 
 mywcRanadomInput.txt: 
 mywcTooMuchNewLine.txt: 
-mywcNonASCII.txt
 
 2. Statement Testing: Testing to satisfy the criterion that each 
 statement in a program be executed at least once during
 program testing.
 - tests and expected outputs (line word character) - 
-mywcStatement1.txt:       0       3      13
+mywcStatement1.txt:       
+0       3      13
 mywcStatement2.txt:      0       1      15
 mywcPunctuations.txt:      0       3      19
 
