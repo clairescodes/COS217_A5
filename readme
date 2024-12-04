@@ -122,8 +122,10 @@ mywcOneWhite.txt: tests word counting logic on whitespace.
 mywcNoNewLine.txt: tests case when file structure deviates from
 typical assumption of a newline-terminated file
 file contains words with no newline character
+0       3      13
 
 mywcSpecialCharacters.txt: contains tab, newline characters.
+
 mywcReallyLongWord.txt: 
 mywcReallyBigFile.txt: 
 mywcTooMuchWhiteSpace.txt: 
