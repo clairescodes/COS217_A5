@@ -189,7 +189,7 @@ skip_carry_1:
 skip_carry_2:
         // oSum->aulDigits[lIndex] = ulSum;
         ldr     x0, [sp, oSum]
-        add     x0, x0, AULDIGITS            // Point to aulDigits
+        add     x0, x0, AULDIGITS 
         ldr     x1, [sp, lIndex]
         lsl     x1, x1, 3
         add     x0, x0, x1

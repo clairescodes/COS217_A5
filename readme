@@ -3,13 +3,11 @@ Assignment 5 readme File
 ------------------------------------------------------------------------
 Student 1: What is your name?
 
-
-
+Emily Qian
 ------------------------------------------------------------------------
 Student 2: What is your name?
 
-
-
+Claire Shin
 ------------------------------------------------------------------------
 Student 1: What authorized sources of information did you use to
 complete the assignment? COPY THE LIST of authorized sources of
@@ -40,8 +38,7 @@ nature of the interaction, may additionally require the interaction
 being reported to the Committee on Discipline. Write "None" if you used
 no unauthorized sources of information.
 
-
-
+None
 ------------------------------------------------------------------------
 Student 2: What unauthorized sources of information did you use to
 complete the assignment? List any unauthorized sources of information
@@ -54,8 +51,7 @@ nature of the interaction, may additionally require the interaction
 being reported to the Committee on Discipline. Write "None" if you used
 no unauthorized sources of information.
 
-
-
+None
 ------------------------------------------------------------------------
 Student 1: In fulfillment of the requirement from section 2.4.3 of the
 Academic Regulations in Princeton's Rights, Rules, Responsibilities
@@ -64,8 +60,7 @@ guide, enter your name in the space below the following affirmation:
 This paper represents my own work in accordance with University
 regulations.
 
-
-
+Emily Qian 
 ------------------------------------------------------------------------
 Student 2: In fulfillment of the requirement from section 2.4.3 of the
 Academic Regulations in Princeton's Rights, Rules, Responsibilities
@@ -74,8 +69,7 @@ guide, enter your name in the space below the following affirmation:
 This paper represents my own work in accordance with University
 regulations.
 
-
-
+Claire Shin
 ------------------------------------------------------------------------
 Student 1: What is your assessment of the assignment? Was it helpful?
 Was it fun?
@@ -86,8 +80,7 @@ Was it fun?
 Student 2: What is your assessment of the assignment? Was it helpful?
 Was it fun?
 
-
-
+It was tedious 
 ------------------------------------------------------------------------
 (optional) What information can you provide about your submission that
 will help your grader to grade it in the most favorable light? In
@@ -98,7 +91,8 @@ particular, what bugs are in your submission?
 ------------------------------------------------------------------------
 What is your mywc program test plan?
 
-There are three key variables involved. 
+There are three main testing methods mentioned 
+in lecture.
 
 1. Statement Testing: Testing to satisfy the criterion that each 
 statement in a program be executed at least once during
@@ -116,11 +110,19 @@ just below, and just above, the defined limits of an output domain.
 (large data sets, Textual data sets containing non-ASCII chars, 
 Binary data sets,  Randomly generated data sets)
 - tests and expected outputs (line word character) - 
-mywcEmpty.txt: empty file, 0 0 0 
-mywcOneChar.txt: one character, 0 1 1 
-mywcOneWord.txt: one word, 0 1 3
-mywcOneWhite.txt: one whitespace, 0 0 1
-mywcNoNewLine.txt: no newline character, 0 3 8 
+mywcEmpty.txt: tests handling of a completely empty file. 
+0 0 0 
+mywcOneChar.txt: tests handling of a minimal input that is 
+not empty. File contains one character without newlines. 
+0 1 1 
+mywcOneWord.txt: file contains single word input. 
+0 1 3
+mywcOneWhite.txt: tests word counting logic on whitespace. 
+0 0 1
+mywcNoNewLine.txt: tests case when file structure deviates from
+typical assumption of a newline-terminated file
+file contains words with no newline character
+
 mywcSpecialCharacters.txt: contains tab, newline characters.
 mywcReallyLongWord.txt: 
 mywcReallyBigFile.txt: 
