@@ -125,6 +125,7 @@ file contains words with no newline character
 0       3      13
 
 mywcSpecialCharacters.txt: contains tab, newline characters.
+0       1      17
 
 mywcReallyLongWord.txt: 
 mywcReallyBigFile.txt: 
