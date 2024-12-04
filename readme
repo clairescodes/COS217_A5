@@ -184,14 +184,16 @@ for handling a single long word,
 and so causes the computer to execute lines 28, 31, 39-40, 30, 
 55, 56 of the given mywc.c and lines 1-43, 45-54, 89-96, 113-122,
 124-133, 135-140 of the mywc.s file. 
+0       1   50000
 
-mywcSRanadomInput.txt: This file contains random ASCII characters,
+mywcSRandomInput.txt: This file contains random ASCII characters,
 including spaces, newlines, and punctuation.
 This thus tests program behavior with arbitrary inputs,
 and so causes the computer to execute lines 28, 31, 32-34, 39-40, 
 36-37, 30, 55, 56 of the given mywc.c and 
 lines 1-43, 45-54, 62-74, 89-96, 97-109, 113-122, 124-133, 135-140 
 of the mywc.s file.
+37      76    2116
 
 mywcSTooMuchWhiteSpace.txt: This file contains excessive 
 whitespace characters without newlines.
