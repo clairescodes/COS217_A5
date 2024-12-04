@@ -202,14 +202,14 @@ and so causes the computer to execute lines 28, 31, 32-34, 30, 55,
 56 of the given mywc.c and lines 1-43, 45-54, 62-74, 113-122,
 124-133, 135-140 of the mywc.s file.
 
+
 mywcSTooMuchNewLine.txt: This file contains excessive newline
 characters without other input. This thus tests program behavior with 
 a large number of line breaks, and so causes the computer to execute
 lines 28, 31, 32-34, 36-37, 30, 55, 56 of the
 given mywc.c and lines 1-43, 45-54, 62-74, 97-109, 113-122, 124-133, 
 135-140 of the mywc.s file.
-
-
+1000       0     1000
 
 ------------------------------------------------------------------------
 What are the CPU times consumed by the programs from Parts 2a, 2b, 2d,
