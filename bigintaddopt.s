@@ -48,7 +48,7 @@ BigInt_larger:
         mov     lLength2, x1
 
         cmp     x0, x1
-        ble     else
+        blt     else
 
         // lLarger = lLength1
         mov     lLarger, lLength1
@@ -88,16 +88,14 @@ return:
         .equ     ULSUM_OFFSET, 16
         .equ     LINDEX_OFFSET, 24
         .equ     LSUMLENGTH_OFFSET, 32  
+        .equ     OADDEND1_OFFSET, 40 
+        .equ     OADDEND2_OFFSET, 48
+        .equ     OSUM_OFFSET, 56
 
         ulCarry         .req x22
         ulSum           .req x23
         lIndex          .req x24 
         lSumLength      .req x25
-
-        .equ     OADDEND1_OFFSET, 40 
-        .equ     OADDEND2_OFFSET, 48
-        .equ     OSUM_OFFSET, 56
-
         oAddend1        .req x26
         oAddend2        .req x27
         oSum            .req x28
@@ -124,13 +122,13 @@ BigInt_add:
         mov     oSum, x2
 
         // lSumLength = BigInt_larger(oAddend1->lLength, oAddend2->lLength)
-        ldr     x0, [oAddend1]
-        ldr     x1, [oAddend2]
+        ldr     x0, [oAddend1, 0]
+        ldr     x1, [oAddend2, 0]
         bl      BigInt_larger
         mov     lSumLength, x0
 
         // clear oSum memory if necessary  
-        ldr     x0, [oSum]            // Load oSum->lLength
+        ldr     x0, [oSum, 0]            // Load oSum->lLength
         cmp     x0, lSumLength
         ble     skip_clear
 
@@ -144,8 +142,8 @@ BigInt_add:
 
 skip_clear:
         // Initialize ulCarry and lIndex
-        mov     ulCarry, 0
-        mov     lIndex, 0
+        mov     ulCarry, xzr
+        mov     lIndex, xzr
 
 loop_start:
         cmp     lIndex, lSumLength
@@ -155,13 +153,13 @@ loop_start:
         mov     ulSum, ulCarry
 
         //  ulCarry = 0;
-        mov     ulCarry, 0
+        mov     ulCarry, xzr
 
         // ulSum += oAddend1->aulDigits[lIndex];
         add     x1, oAddend1, 8
         ldr     x1, [x1, lIndex, lsl 3]
         add     ulSum, ulSum, x1 
-        mov     ulSum, x0 
+        mov     ulSum, x0  
 
         // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
         cmp     x0, x1 
@@ -170,12 +168,10 @@ loop_start:
 
 skip_carry_1:
         // ulSum += oAddend2->aulDigits[lIndex];
-        mov     x0, ulSum 
-        mov     x1, oAddend2
-        add     x1, x1, 8
+        add     x1, oAddend2, 8
         mov     x2, lIndex
         ldr     x1, [x1, x2, lsl 3]
-        add     x0, x0, x1 
+        add     ulSum, ulSum, x1 
         mov     ulSum, x0 
 
         // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
@@ -197,13 +193,11 @@ skip_carry_2:
 
 check_carry_out:
         // if (ulCarry == 1) goto end 
-        mov     x0, ulCarry 
-        cmp     x0, 1 
+        cmp     ulCarry, 1 
         bne     set_length 
 
         // if (lSumLength == MAX_DIGITS) goto add_carry 
-        mov     x0, lSumLength
-        cmp     x0, MAX_DIGITS
+        cmp     lSumLength, MAX_DIGITS
         bne     add_carry
 
         // return FALSE
@@ -212,11 +206,9 @@ check_carry_out:
 
 add_carry:
         // oSum->aulDigits[lSumLength] = 1;
+        add     x1, oSum, AULDIGITS 
         mov     x0, 1
-        mov     x1, oSum 
-        add     x1, x1, AULDIGITS 
-        mov     x2, lSumLength
-        str     x0, [x1, x2, lsl 3]
+        str     x0, [x1, lSumLength, lsl 3] // labta careful!!
 
         // lSumLength++ 
         add     lSumLength, lSumLength, 1 
