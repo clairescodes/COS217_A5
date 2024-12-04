@@ -144,8 +144,8 @@ BigInt_add:
 
 skip_clear:
         // Initialize ulCarry and lIndex
-        mov     x22, 0
-        mov     x24, 0
+        mov     ulCarry, 0
+        mov     lIndex, 0
 
 loop_start:
         cmp     lIndex, lSumLength
@@ -158,12 +158,9 @@ loop_start:
         mov     ulCarry, 0
 
         // ulSum += oAddend1->aulDigits[lIndex];
-        mov     x0, ulSum 
-        mov     x1, oAddend1
-        add     x1, x1, 8
-        mov     x2, lIndex
-        ldr     x1, [x1, x2, lsl 3]
-        add     x0, x0, x1 
+        add     x1, oAddend1, 8
+        ldr     x1, [x1, lIndex, lsl 3]
+        add     ulSum, ulSum, x1 
         mov     ulSum, x0 
 
         // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
@@ -211,17 +208,7 @@ check_carry_out:
 
         // return FALSE
         mov     w0, FALSE
-        ldr     x30, [sp]
-        ldr     x22, [sp, ULCARRY_OFFSET]
-        ldr     x23, [sp, ULSUM_OFFSET]
-        ldr     x24, [sp, LINDEX_OFFSET]
-        ldr     x25, [sp, LSUMLENGTH_OFFSET]
-        ldr     x26, [sp, OADDEND1_OFFSET]
-        ldr     x27, [sp, OADDEND2_OFFSET]
-        ldr     x28, [sp, OSUM_OFFSET]
-
-        add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
-        ret
+        b       epilogue 
 
 add_carry:
         // oSum->aulDigits[lSumLength] = 1;
@@ -240,6 +227,7 @@ set_length:
         mov     x1, lSumLength 
         str     x1, [x0] 
 
+epilogue: 
         // return TRUE;
         mov     w0, TRUE
         ldr     x22, [sp, ULCARRY_OFFSET]
@@ -249,9 +237,6 @@ set_length:
         ldr     x26, [sp, OADDEND1_OFFSET]
         ldr     x27, [sp, OADDEND2_OFFSET]
         ldr     x28, [sp, OSUM_OFFSET]
-
-return_add:
-        // Epilog: Restore stack space
         add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         ret
 

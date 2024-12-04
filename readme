@@ -98,6 +98,8 @@ particular, what bugs are in your submission?
 ------------------------------------------------------------------------
 What is your mywc program test plan?
 
+There are three key variables involved. 
+
 1. Statement Testing: Testing to satisfy the criterion that each 
 statement in a program be executed at least once during
 program testing.
