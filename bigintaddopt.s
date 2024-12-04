@@ -234,7 +234,7 @@ epilogue:
         ldr     x22, [sp, ULCARRY_OFFSET]
         ldr     x23, [sp, ULSUM_OFFSET]
         ldr     x24, [sp, LINDEX_OFFSET]
-        ldr     x25, [sp, LSUMLENGsTH_OFFSET]
+        ldr     x25, [sp, LSUMLENGTH_OFFSET]
         ldr     x26, [sp, OADDEND1_OFFSET]
         ldr     x27, [sp, OADDEND2_OFFSET]
         ldr     x28, [sp, OSUM_OFFSET]
