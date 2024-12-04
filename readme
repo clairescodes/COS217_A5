@@ -94,15 +94,7 @@ What is your mywc program test plan?
 There are three main testing methods mentioned 
 in lecture.
 
-1. Statement Testing: Testing to satisfy the criterion that each 
-statement in a program be executed at least once during
-program testing.
-- tests and expected outputs (line word character) - 
-mywcStatement1.txt:      0       3      13
-mywcStatement2.txt:      0       1      15
-mywcPunctuations.txt:      0       3      19
-
-2. Boundary Testing  
+1. Boundary Testing  
 A testing technique using input values at, 
 just below, and just above, the defined limits of an
 input domain; and with input values causing outputs to be at, 
@@ -110,21 +102,21 @@ just below, and just above, the defined limits of an output domain.
 (large data sets, Textual data sets containing non-ASCII chars, 
 Binary data sets,  Randomly generated data sets)
 - tests and expected outputs (line word character) - 
-mywcEmpty.txt: tests handling of a completely empty file. 
-0 0 0 
-mywcOneChar.txt: tests handling of a minimal input that is 
-not empty. File contains one character without newlines. 
-0 1 1 
-mywcOneWord.txt: file contains single word input. 
-0 1 3
-mywcOneWhite.txt: tests word counting logic on whitespace. 
-0 0 1
-mywcNoNewLine.txt: tests case when file structure deviates from
-typical assumption of a newline-terminated file
-file contains words with no newline character
+mywcEmpty.txt: This file has zero characters. 
+This thus tests program behavior with no input.
+0       0       0
+mywcOneChar.txt: This file contains one character without newlines.
+Thus it tests boundary minimal input. 
+0       1       1
+mywcOneWhite.txt: This file contains one whitespace. 
+Thus it tests word counting logic on whitespace. 
+0       0       0
+mywcNoNewLine.txt: This file contains words with no newline character
+Thus it tests if word counting works without newline terminating the
+file. 
 0       3      13
-
-mywcSpecialCharacters.txt: contains tab, newline characters.
+mywcSpecialCharacters.txt: This file contains word with special
+characters like tabs and newlines. 
 0       1      17
 
 mywcReallyLongWord.txt: 
@@ -133,6 +125,14 @@ mywcTooMuchWhiteSpace.txt:
 mywcRanadomInput.txt: 
 mywcTooMuchNewLine.txt: 
 mywcNonASCII.txt
+
+2. Statement Testing: Testing to satisfy the criterion that each 
+statement in a program be executed at least once during
+program testing.
+- tests and expected outputs (line word character) - 
+mywcStatement1.txt:       0       3      13
+mywcStatement2.txt:      0       1      15
+mywcPunctuations.txt:      0       3      19
 
 3. Stress Testing
 - tests and expected outputs (line word character) - 
