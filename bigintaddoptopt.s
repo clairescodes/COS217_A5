@@ -96,7 +96,7 @@ skip_clear:
 
         // OPTIMIZATION 2F_1: guarded loop pattern
         cmp     lIndex, lSumLength
-        bge     loop_end  // Exit if lIndex >= lSumLength
+        bge     check_carry_out  // Exit if lIndex >= lSumLength
 
 loop_start: 
         // OPTIMIZATION 2F_3: use adcs, 
