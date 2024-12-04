@@ -47,18 +47,20 @@ BigInt_larger:
         mov     lLength1, x0 
         mov     lLength2, x1
 
+        // if (lLength1 <= lLength2) goto else_section;
         cmp     x0, x1
-        ble     else
+        ble     else_section
 
-        // lLarger = lLength1
+        // lLarger = lLength1;
+        // goto return_section;
         mov     lLarger, lLength1
-        b       return
+        b       return_section
 
-else: 
+else_section: 
         // lLarger = lLength2
         mov     lLarger, lLength2
 
-return:
+return_section:
         // return lLarger;
         mov     x0, lLarger
 
@@ -130,10 +132,13 @@ BigInt_add:
         mov     lSumLength, x0
 
         // clear oSum memory if necessary  
+        // if (oSum->lLength <= lSumLength) goto skip_clear;
         ldr     x0, [oSum, 0]            // Load oSum->lLength
         cmp     x0, lSumLength
         ble     skip_clear
 
+        // memset(oSum->aulDigits, 0, MAX_DIGITS * sizeof(unsigned long));
+        // goto skip_clear;
         mov     x0, oSum
         add     x0, x0, AULDIGITS
         mov     w1, 0
@@ -142,18 +147,19 @@ BigInt_add:
         bl      memset
 
 skip_clear:
-        // Initialize ulCarry and lIndex
+        // ulCarry = 0;
+        // lIndex = 0;
         mov     ulCarry, 0
         mov     lIndex, 0
 
 loop_start:
+        // if (lIndex >= lSumLength) goto check_carry_out;
         cmp     lIndex, lSumLength
-        bge     check_carry_out       // Exit loop if lIndex >= lSumLength
+        bge     check_carry_out 
 
         // ulSum = ulCarry;
-        mov     ulSum, ulCarry
-
         //  ulCarry = 0;
+        mov     ulSum, ulCarry
         mov     ulCarry, 0
 
         // ulSum += oAddend1->aulDigits[lIndex];
@@ -161,7 +167,8 @@ loop_start:
         ldr     x1, [x0, lIndex, lsl 3]
         add     ulSum, ulSum, x1 
 
-        // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
+        // if (ulSum < oAddend1->aulDigits[lIndex]) goto skip_carry_1;
+        // ulCarry = 1;
         cmp     ulSum, x1 
         bhs     skip_carry_1  //ask emily bcs (161) 
         mov     ulCarry, 1
@@ -172,7 +179,8 @@ skip_carry_1:
         ldr     x1, [x0, lIndex, lsl 3]
         add     ulSum, ulSum, x1 
 
-        // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
+        // if (ulSum < oAddend2->aulDigits[lIndex]) goto skip_carry_2;
+        // ulCarry = 1;
         cmp     ulSum, x1 
         bhs     skip_carry_2 
         mov     ulCarry, 1
@@ -183,15 +191,16 @@ skip_carry_2:
         str     ulSum, [x0, lIndex, lsl 3]
 
         // lIndex++; 
+        // goto loop_start;
         add     lIndex, lIndex, 1 
         b       loop_start
 
 check_carry_out:
-        // if (ulCarry == 1) goto end 
+        // if (ulCarry != 1) goto set_length;
         cmp     ulCarry, 1 
         bne     set_length 
 
-        // if (lSumLength == MAX_DIGITS) goto add_carry 
+        // if (lSumLength != MAX_DIGITS) goto add_carry;
         cmp     lSumLength, MAX_DIGITS
         bne     add_carry
 
@@ -216,6 +225,7 @@ add_carry:
         str     x1, [x0, lSumLength, lsl #3]
 
         // lSumLength++ 
+        // goto set_length;
         add     lSumLength, lSumLength, 1 
 
 set_length: 
@@ -239,4 +249,3 @@ return_add:
         ret
 
         .size   BigInt_add, (. - BigInt_add)
-
