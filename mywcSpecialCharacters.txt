@@ -1,1 +1,1 @@
-Tom\tand\nJerry\t
+Tom\tandJerry\n
