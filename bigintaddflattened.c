@@ -79,7 +79,7 @@ loop_start:
 
     // Increment index
     lIndex++;
-    goto loop_start;
+    if (lIndex < lSumLength) goto loop_start;
 
 check_carry_out:
     if (ulCarry == 1)
