@@ -48,7 +48,7 @@ BigInt_larger:
         mov     lLength2, x1
 
         cmp     x0, x1
-        ble     else
+        blt     else
 
         // lLarger = lLength1
         mov     lLarger, lLength1
@@ -88,19 +88,17 @@ return:
         .equ     ULSUM_OFFSET, 16
         .equ     LINDEX_OFFSET, 24
         .equ     LSUMLENGTH_OFFSET, 32  
-
-        ulCarry         .req x19
-        ulSum           .req x20
-        lIndex          .req x21 
-        lSumLength      .req x22
-
         .equ     OADDEND1_OFFSET, 40 
         .equ     OADDEND2_OFFSET, 48
         .equ     OSUM_OFFSET, 56
 
-        oAddend1        .req x23
-        oAddend2        .req x24
-        oSum            .req x25
+        ulCarry         .req x22
+        ulSum           .req x23
+        lIndex          .req x24 
+        lSumLength      .req x25
+        oAddend1        .req x26
+        oAddend2        .req x27
+        oSum            .req x28
 
         .equ     AULDIGITS, 8
         
@@ -110,13 +108,13 @@ BigInt_add:
         // Prolog 
         sub     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         str     x30, [sp]
-        str     x19, [sp, ULCARRY_OFFSET]
-        str     x20, [sp, ULSUM_OFFSET]
-        str     x21, [sp, LINDEX_OFFSET]
-        str     x22, [sp, LSUMLENGTH_OFFSET]
-        str     x23, [sp, OADDEND1_OFFSET]
-        str     x24, [sp, OADDEND2_OFFSET]
-        str     x25, [sp, OSUM_OFFSET]
+        str     x22, [sp, ULCARRY_OFFSET]
+        str     x23, [sp, ULSUM_OFFSET]
+        str     x24, [sp, LINDEX_OFFSET]
+        str     x25, [sp, LSUMLENGTH_OFFSET]
+        str     x26, [sp, OADDEND1_OFFSET]
+        str     x27, [sp, OADDEND2_OFFSET]
+        str     x28, [sp, OSUM_OFFSET]
 
         // save parameters to callee saved registers
         mov     oAddend1, x0
@@ -138,13 +136,14 @@ BigInt_add:
         add     x0, x0, AULDIGITS
         mov     w1, 0
         mov     x2, MAX_DIGITS
-        lsl     x2, x2, 3
+        mov     x3, AULDIGITS
+        mul     x2, x2, x3
         bl      memset
 
 skip_clear:
         // Initialize ulCarry and lIndex
-        mov     ulCarry, 0
-        mov     lIndex, 0
+        mov     ulCarry, xzr
+        mov     lIndex, xzr
 
 loop_start:
         cmp     lIndex, lSumLength
@@ -154,33 +153,39 @@ loop_start:
         mov     ulSum, ulCarry
 
         //  ulCarry = 0;
-        mov     ulCarry, 0
+        mov     ulCarry, xzr
 
         // ulSum += oAddend1->aulDigits[lIndex];
-        add     x0, oAddend1, AULDIGITS
-        ldr     x1, [x0, lIndex, lsl 3]
+        add     x1, oAddend1, 8
+        ldr     x1, [x1, lIndex, lsl 3]
         add     ulSum, ulSum, x1 
+        mov     ulSum, x0  
 
         // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
-        cmp     ulSum, x1 
+        cmp     x0, x1 
         bhs     skip_carry_1  //ask emily bcs (161) 
         mov     ulCarry, 1
 
 skip_carry_1:
         // ulSum += oAddend2->aulDigits[lIndex];
-        add     x0, oAddend2, AULDIGITS
-        ldr     x1, [x0, lIndex, lsl 3]
+        add     x1, oAddend2, 8
+        mov     x2, lIndex
+        ldr     x1, [x1, x2, lsl 3]
         add     ulSum, ulSum, x1 
+        mov     ulSum, x0 
 
         // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
-        cmp     ulSum, x1 
+        cmp     x0, x1 
         bhs     skip_carry_2 
         mov     ulCarry, 1
 
 skip_carry_2:
         // oSum->aulDigits[lIndex] = ulSum;
-        add     x0, oSum, AULDIGITS
-        str     ulSum, [x0, lIndex, lsl 3]
+        mov     x0, ulSum 
+        mov     x1, oSum 
+        add     x1, x1, AULDIGITS
+        mov     x2, lIndex 
+        str     x0, [x1, x2, lsl 3]
 
         // lIndex++; 
         add     lIndex, lIndex, 1 
@@ -197,44 +202,34 @@ check_carry_out:
 
         // return FALSE
         mov     w0, FALSE
-        ldr     x30, [sp]
-        ldr     x19, [sp, ULCARRY_OFFSET]
-        ldr     x20, [sp, ULSUM_OFFSET]
-        ldr     x21, [sp, LINDEX_OFFSET]
-        ldr     x22, [sp, LSUMLENGTH_OFFSET]
-        ldr     x23, [sp, OADDEND1_OFFSET]
-        ldr     x24, [sp, OADDEND2_OFFSET]
-        ldr     x25, [sp, OSUM_OFFSET]
-
-        add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
-        ret
+        b       epilogue 
 
 add_carry:
         // oSum->aulDigits[lSumLength] = 1;
-        add     x0, oSum, AULDIGITS 
-        mov     x1, 1
-        str     x1, [x0, lSumLength, lsl #3]
+        add     x1, oSum, AULDIGITS 
+        mov     x0, 1
+        str     x0, [x1, lSumLength, lsl 3] // labta careful!!
 
         // lSumLength++ 
         add     lSumLength, lSumLength, 1 
 
 set_length: 
         // oSum->lLength = lSumLength; 
-        str     lSumLength, [oSum, 0] 
+        mov     x0, oSum 
+        mov     x1, lSumLength 
+        str     x1, [x0] 
 
+epilogue: 
         // return TRUE;
         mov     w0, TRUE
-        LDR     x30, [sp]
-        ldr     x19, [sp, ULCARRY_OFFSET]
-        ldr     x20, [sp, ULSUM_OFFSET]
-        ldr     x21, [sp, LINDEX_OFFSET]
-        ldr     x22, [sp, LSUMLENGTH_OFFSET]
-        ldr     x23, [sp, OADDEND1_OFFSET]
-        ldr     x24, [sp, OADDEND2_OFFSET]
-        ldr     x25, [sp, OSUM_OFFSET]
-
-return_add:
-        // Epilog: Restore stack space
+        ldr     x30, [sp]
+        ldr     x22, [sp, ULCARRY_OFFSET]
+        ldr     x23, [sp, ULSUM_OFFSET]
+        ldr     x24, [sp, LINDEX_OFFSET]
+        ldr     x25, [sp, LSUMLENGTH_OFFSET]
+        ldr     x26, [sp, OADDEND1_OFFSET]
+        ldr     x27, [sp, OADDEND2_OFFSET]
+        ldr     x28, [sp, OSUM_OFFSET]
         add     sp, sp, BIGINT_ADD_STACK_BYTECOUNT
         ret
 
