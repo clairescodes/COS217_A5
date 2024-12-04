@@ -102,40 +102,49 @@ just below, and just above, the defined limits of an output domain.
 (large data sets, Textual data sets containing non-ASCII chars, 
 Binary data sets,  Randomly generated data sets)
 - tests and expected outputs (line word character) - 
-mywcEmpty.txt: This file has zero characters. 
+mywcBEmpty.txt: This file has zero characters. 
 This thus tests program behavior with no input.
+mywc.c - 
+mywc.s - 
 0       0       0
-mywcOneChar.txt: This file contains one character without newlines.
+mywcBOneChar.txt: This file contains one character without newlines.
 Thus it tests boundary minimal input. 
+mywc.c - 12-16, 18, 26-30, 36-37, 39-40
 0       1       1
-mywcOneWhite.txt: This file contains one whitespace. 
+mywcBOneWhite.txt: This file contains one whitespace. 
 Thus it tests word counting logic on whitespace. 
+mywc.c - 12-16, 18-25, 36-37, 39-40.
 0       0       0
-mywcNoNewLine.txt: This file contains words with no newline character
+mywcBNoNewLine.txt: This file contains words with no newline character
 Thus it tests if word counting works without newline terminating the
 file. 
 0       3      13
-mywcSpecialCharacters.txt: This file contains word with special
+mywcBSpecialCharacters.txt: This file contains word with special
 characters like tabs and newlines. 
 0       1      17
-
-mywcReallyLongWord.txt: 
-mywcReallyBigFile.txt: 
-mywcTooMuchWhiteSpace.txt: 
-mywcRanadomInput.txt: 
-mywcTooMuchNewLine.txt: 
 
 2. Statement Testing: Testing to satisfy the criterion that each 
 statement in a program be executed at least once during
 program testing.
 - tests and expected outputs (line word character) - 
-mywcStatement1.txt:       
-0       3      13
-mywcStatement2.txt:      0       1      15
-mywcPunctuations.txt:      0       3      19
+mywcStatement1.txt: This file contains a statement that 
+ends in a newline. 
+1       3      13
+mywcStatement2.txt: This file contains a statement that 
+ends in a newline. 
+1       1      15
+mywcSPunctuations.txt: This file contains a statement that 
+contains punctuations and ends in a newline. 
+1       3      20
 
 3. Stress Testing
 - tests and expected outputs (line word character) - 
+mywcSReallyLongWord.txt: This file contains a long word of max size
+without whitespaces nor newlines. 
+mywcSRanadomInput.txt: This file contains random ASCII characters
+including spaces, newlines, punctuation. 
+mywcSTooMuchWhiteSpace.txt: 
+mywcSTooMuchNewLine.txt: 
 
 
 
