@@ -3,40 +3,39 @@
 
 int main(void)
 {
-    long lineCount = 0;   
-    long wordCount = 0; 
-    long charCount = 0; 
-    int inWord = 0;   
-    int ch; 
+    long lLineCount = 0;   
+    long lWordCount = 0; 
+    long lCharCount = 0; 
+    int iInWord = 0;   
+    int iChar; 
 
 read:
-    ch = getchar();
-    if (ch == EOF) goto endloop;
+    iChar = getchar();
+    if (iChar == EOF) goto endloop;
 
 processchar:
-    charCount++;
-    if (isspace(ch)) goto whitespace;
-    goto nonwhitespace;
+    lCharCount++;
+    if (iChar == '\n') lLineCount++;
+    if (isspace(iChar)) goto whitespace;
+    goto nonwhitespace; 
 
 whitespace:
-    if (inWord)
+    if (iInWord)
     {
-        wordCount++;
-        inWord = 0;
+        lWordCount++;
+        iInWord = 0;
     }
-    if (ch == '\n') lineCount++;
-    goto read;
+    goto read; 
 
 nonwhitespace:
-    if (!inWord) inWord = 1;
+    if (!iInWord) iInWord = 1;
     goto read;
 
 endloop:
-    if (inWord) wordCount++;
-    goto print;
+    if (iInWord) lWordCount++;
 
 print:
-    printf("%7ld %7ld %7ld\n", lineCount, wordCount, charCount);
+    printf("%7ld %7ld %7ld\n", lLineCount, lWordCount, lCharCount);
     goto exit;
 
 exit:
