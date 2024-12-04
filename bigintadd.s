@@ -37,23 +37,25 @@ BigInt_larger:
         str     x30, [sp]
 
         // long lLarger;
-        // Store parameters on stack
         str     x0, [sp, lLength1]
         str     x1, [sp, lLength2]
 
+        // if (lLength1 <= lLength2) goto else_section;
         cmp     x0, x1
-        ble     else
+        ble     else_section
 
+        // lLarger = lLength1;
+        // goto return_section;
         ldr     x0, [sp, lLength1]
         str     x0, [sp, lLarger]
 
-        b       return
+        b       return_section
 
-else: 
+else_section: 
         // lLarger = lLength2;
         str     x1, [sp, lLarger]
 
-return:
+return_section:
         // return lLarger;
         ldr     x0, [sp, lLarger]
 
@@ -106,7 +108,8 @@ BigInt_add:
         bl      BigInt_larger
         str     x0, [sp, lSumLength]
 
-        // if (oSum->lLength > lSumLength)
+        // clear oSum memory if necessary 
+        // if (oSum->lLength <= lSumLength) goto skip_clear;
         ldr     x0, [sp, oSum]
         ldr     x0, [x0]
         ldr     x1, [sp, lSumLength]
@@ -132,10 +135,11 @@ skip_clear:
         str     x0, [sp, lIndex]
 
 loop_start:
+        // if (lIndex >= lSumLength) goto check_carry_out;
         ldr     x0, [sp, lIndex]
         ldr     x1, [sp, lSumLength]
         cmp     x0, x1
-        bge     check_carry_out      // Exit loop if lIndex >= lSumLength
+        bge     check_carry_out 
 
         // ulSum = ulCarry;
         ldr     x0, [sp, ulCarry]
@@ -149,14 +153,15 @@ loop_start:
         ldr     x0, [sp, oAddend1]
         add     x0, x0, AULDIGITS
         ldr     x1, [sp, lIndex]
-        lsl     x1, x1, 3            // Multiply index by sizeof(unsigned long)
+        lsl     x1, x1, 3  // multiply index by sizeof(unsigned long)
         add     x0, x0, x1
         ldr     x1, [x0]
         ldr     x2, [sp, ulSum]
         add     x2, x2, x1
         str     x2, [sp, ulSum]
 
-        // if (ulSum < oAddend1->aulDigits[lIndex]) ulCarry = 1;
+        // if (ulSum < oAddend1->aulDigits[lIndex]) goto skip_carry_1;
+        // ulCarry = 1;
         cmp     x2, x1
         bcs     skip_carry_1
         mov     x0, 1
@@ -174,7 +179,8 @@ skip_carry_1:
         add     x2, x2, x1
         str     x2, [sp, ulSum]
 
-        // if (ulSum < oAddend2->aulDigits[lIndex]) ulCarry = 1;
+        // if (ulSum < oAddend2->aulDigits[lIndex]) goto skip_carry_2;
+        // ulCarry = 1;
         cmp     x2, x1
         bcs     skip_carry_2
         mov     x0, 1
@@ -191,6 +197,7 @@ skip_carry_2:
         str     x2, [x0]
 
         // lIndex++;
+        // goto loop_start;
         ldr     x0, [sp, lIndex]
         add     x0, x0, 1
         str     x0, [sp, lIndex]
@@ -198,11 +205,11 @@ skip_carry_2:
         b       loop_start
 
 check_carry_out:
-        // if (ulCarry == 1)
+        // if (ulCarry != 1) goto set_length;
         ldr     x0, [sp, ulCarry]
-        cbz     x0, set_length       // Skip if ulCarry == 0
+        cbz     x0, set_length  
 
-        // if (lSumLength == MAX_DIGITS)
+        // if (lSumLength != MAX_DIGITS) goto add_carry;
         ldr     x0, [sp, lSumLength]
         mov     x1, MAX_DIGITS
         cmp     x0, x1
@@ -222,7 +229,8 @@ add_carry:
         mov     x2, 1
         str     x2, [x0]
 
-        // lSumLength++;
+        // lSumLength++ 
+        // goto set_length;
         ldr     x0, [sp, lSumLength]
         add     x0, x0, 1
         str     x0, [sp, lSumLength]
